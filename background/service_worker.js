@@ -10,9 +10,10 @@ const FLUSH_PERIOD_MINUTES = 0.5;
 const RETENTION_DAYS = 30;
 const PATHNAME_LIMIT = 50;
 const FLUSH_ALARM = "oys-flush";
+const SCHEMA_VERSION = 2;
 
-const domains = new Set();
-const categoryByDomain = new Map();
+const endpointByDomain = new Map();
+const sourceCategories = [];
 const pending = new Map();
 let ringBuffer = [];
 let active = true;
@@ -23,17 +24,22 @@ init();
 
 async function init() {
   try {
-    const resp = await fetch(chrome.runtime.getURL("data/endpoints.json"));
-    const endpoints = await resp.json();
-    for (const ep of endpoints) {
-      domains.add(ep.domain);
-      categoryByDomain.set(ep.domain, ep.category);
-    }
+    const [endpointsResp, sourcesResp] = await Promise.all([
+      fetch(chrome.runtime.getURL("data/endpoints.json")),
+      fetch(chrome.runtime.getURL("data/source_categories.json")),
+    ]);
+    const endpoints = await endpointsResp.json();
+    const sources = await sourcesResp.json();
+    for (const ep of endpoints) endpointByDomain.set(ep.domain, ep);
+    for (const s of sources) sourceCategories.push(s);
+
     const stored = await chrome.storage.local.get({
       [STORAGE_KEY_ACTIVE]: true,
       [STORAGE_KEY_COUNTERS]: defaultCounters(),
     });
     active = stored[STORAGE_KEY_ACTIVE] !== false;
+
+    await backfillIfNeeded();
   } catch (err) {
     console.error("OYS init failed", err);
   } finally {
@@ -43,11 +49,15 @@ async function init() {
 
 function defaultCounters() {
   return {
+    schemaVersion: SCHEMA_VERSION,
     total: 0,
     today: 0,
     todayDate: dayKey(),
     byHost: {},
     byCategory: {},
+    byCountry: {},
+    byVendor: {},
+    bySourceCategory: {},
   };
 }
 
@@ -79,11 +89,31 @@ function contentLengthFrom(headers) {
   return null;
 }
 
+function categorize(hostname) {
+  if (!hostname) return { category: "other", label: "General browsing" };
+  for (const entry of sourceCategories) {
+    const pat = entry.domain_pattern;
+    if (pat.startsWith("*.")) {
+      const suffix = pat.slice(2);
+      if (hostname === suffix || hostname.endsWith("." + suffix)) {
+        return { category: entry.category, label: entry.label };
+      }
+    } else if (hostname === pat) {
+      return { category: entry.category, label: entry.label };
+    }
+  }
+  return { category: "other", label: "General browsing" };
+}
+
 chrome.webRequest.onBeforeRequest.addListener(
   (details) => {
     if (!ready || !active) return;
     const host = hostOf(details.url);
-    if (!host || !domains.has(host)) return;
+    if (!host || !endpointByDomain.has(host)) return;
+
+    const ep = endpointByDomain.get(host);
+    const initiatorHost = hostOf(details.initiator);
+    const src = categorize(initiatorHost);
 
     let pathname = "";
     try {
@@ -94,10 +124,14 @@ chrome.webRequest.onBeforeRequest.addListener(
       requestId: details.requestId,
       timestamp: Date.now(),
       hostname: host,
-      category: categoryByDomain.get(host) || null,
+      endpointVendor: ep.vendor || null,
+      endpointCountry: ep.country || null,
+      endpointCategory: ep.category || null,
       pathname: pathname.slice(0, PATHNAME_LIMIT),
       tabId: typeof details.tabId === "number" ? details.tabId : -1,
-      initiator: hostOf(details.initiator),
+      initiator: initiatorHost,
+      sourceCategory: src.category,
+      sourceLabel: src.label,
       requestSize: contentLengthFrom(details.requestHeaders),
       statusCode: null,
       responseSize: null,
@@ -161,23 +195,34 @@ async function flush() {
 
     const readKeys = [STORAGE_KEY_COUNTERS, ...byDate.keys()];
     const stored = await chrome.storage.local.get(readKeys);
-    const counters = stored[STORAGE_KEY_COUNTERS] || defaultCounters();
+    const counters = { ...defaultCounters(), ...(stored[STORAGE_KEY_COUNTERS] || {}) };
+    counters.schemaVersion = SCHEMA_VERSION;
 
     const curDay = dayKey();
     if (counters.todayDate !== curDay) {
       counters.today = 0;
       counters.todayDate = curDay;
     }
-    counters.byHost = counters.byHost || {};
-    counters.byCategory = counters.byCategory || {};
 
     for (const ev of batch) {
       counters.total += 1;
       if (dayKey(ev.timestamp) === curDay) counters.today += 1;
       counters.byHost[ev.hostname] = (counters.byHost[ev.hostname] || 0) + 1;
-      if (ev.category) {
-        counters.byCategory[ev.category] = (counters.byCategory[ev.category] || 0) + 1;
+      if (ev.endpointCategory) {
+        counters.byCategory[ev.endpointCategory] =
+          (counters.byCategory[ev.endpointCategory] || 0) + 1;
       }
+      if (ev.endpointCountry) {
+        counters.byCountry[ev.endpointCountry] =
+          (counters.byCountry[ev.endpointCountry] || 0) + 1;
+      }
+      if (ev.endpointVendor) {
+        counters.byVendor[ev.endpointVendor] =
+          (counters.byVendor[ev.endpointVendor] || 0) + 1;
+      }
+      const srcCat = ev.sourceCategory || "other";
+      counters.bySourceCategory[srcCat] =
+        (counters.bySourceCategory[srcCat] || 0) + 1;
     }
 
     const writes = { [STORAGE_KEY_COUNTERS]: counters };
@@ -210,4 +255,44 @@ async function rotate() {
     if (Number.isFinite(ts) && ts < cutoff) stale.push(key);
   }
   if (stale.length) await chrome.storage.local.remove(stale);
+}
+
+async function backfillIfNeeded() {
+  const stored = await chrome.storage.local.get([STORAGE_KEY_COUNTERS]);
+  const existing = stored[STORAGE_KEY_COUNTERS];
+  if (existing && existing.schemaVersion >= SCHEMA_VERSION) return;
+
+  const counters = { ...defaultCounters(), ...(existing || {}) };
+  counters.byCountry = {};
+  counters.byVendor = {};
+  counters.bySourceCategory = {};
+
+  const all = await chrome.storage.local.get(null);
+  for (const [key, evs] of Object.entries(all)) {
+    if (!key.startsWith(EVENTS_PREFIX)) continue;
+    if (!Array.isArray(evs)) continue;
+    for (const ev of evs) {
+      const ep = endpointByDomain.get(ev.hostname);
+      if (ep) {
+        if (ep.country) {
+          counters.byCountry[ep.country] =
+            (counters.byCountry[ep.country] || 0) + 1;
+        }
+        if (ep.vendor) {
+          counters.byVendor[ep.vendor] =
+            (counters.byVendor[ep.vendor] || 0) + 1;
+        }
+      }
+      const src = categorize(ev.initiator);
+      counters.bySourceCategory[src.category] =
+        (counters.bySourceCategory[src.category] || 0) + 1;
+    }
+  }
+  counters.schemaVersion = SCHEMA_VERSION;
+  await chrome.storage.local.set({ [STORAGE_KEY_COUNTERS]: counters });
+  console.log("OYS backfill complete", {
+    byCountry: counters.byCountry,
+    byVendor: counters.byVendor,
+    bySourceCategory: counters.bySourceCategory,
+  });
 }

@@ -5,7 +5,7 @@ body {
 }
 
 body {
-  width: 320px;
+  width: 340px;
   font-family: system-ui, -apple-system, Segoe UI, Roboto, sans-serif;
   color: #1a1a1a;
   background: #ffffff;
@@ -41,10 +41,83 @@ header {
   margin-top: -2px;
 }
 
+.score {
+  margin-top: 10px;
+  padding: 10px 12px;
+  border: 1px solid #eee;
+  border-radius: 6px;
+  background: #fafafa;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.score-header {
+  font-size: 12px;
+  color: #444;
+}
+
+.score-header #score-value {
+  font-size: 18px;
+  font-weight: 700;
+}
+
+.score.green .score-header #score-value,
+.score.green #score-label {
+  color: #15803d;
+}
+.score.amber .score-header #score-value,
+.score.amber #score-label {
+  color: #b45309;
+}
+.score.red .score-header #score-value,
+.score.red #score-label {
+  color: #b91c1c;
+}
+
+.bars {
+  list-style: none;
+  padding: 0;
+  margin: 4px 0 0;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  font-family: Consolas, "Courier New", monospace;
+  font-size: 11px;
+}
+
+.bars li {
+  display: grid;
+  grid-template-columns: 72px 1fr auto;
+  gap: 8px;
+  align-items: center;
+}
+
+.bars .factor {
+  color: #555;
+}
+
+.bars .bar {
+  color: #1f2937;
+  letter-spacing: 0;
+}
+
+.bars .val {
+  color: #555;
+  font-variant-numeric: tabular-nums;
+  text-align: right;
+}
+
+#score-label {
+  font-size: 12px;
+  font-weight: 500;
+  margin-top: 2px;
+}
+
 .subline {
   font-size: 12px;
   color: #444;
-  margin-top: 6px;
+  margin-top: 8px;
 }
 
 .top-list {

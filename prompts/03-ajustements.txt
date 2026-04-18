@@ -1,0 +1,25 @@
+The popup throws this error on open:
+
+TypeError: Cannot set properties of null (setting 'textContent')
+
+This means popup.js references DOM elements (via getElementById / querySelector) that don't exist in popup.html. 
+
+Do the following:
+
+1. Open popup/popup.html and list every element ID it contains.
+2. Open popup/popup.js and list every ID it tries to access (getElementById calls and querySelector calls on those elements).
+3. Identify the mismatch — which IDs are in popup.js but missing from popup.html, or have different names.
+4. Fix popup.html so it contains ALL the structural elements popup.js expects:
+   - #today-count
+   - #subline
+   - #top-list
+   - #status (with a child .status-text element)
+   - #toggle
+   - #score-section
+   - #score-value
+   - #score-label
+   - #score-bars (with 4 <li data-factor="volume|categoryDiversity|geoExposure|continuity"> children, each containing a .bar and a .val element)
+5. Keep styling minimal but functional — basic CSS so elements are readable, score color tinting via the .green / .amber / .red classes on #score-section, unicode bars rendered in monospace font for alignment.
+6. After fixing, tell me exactly what was missing/mismatched, and confirm you reopened popup.html in a dry parse to verify all IDs line up.
+
+Do NOT touch popup.js, service_worker.js, or lib/score.js — the bug is in popup.html.

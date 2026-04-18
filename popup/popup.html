@@ -12,6 +12,36 @@
       <div id="today-count" class="big">0</div>
       <div id="today-label">requests today</div>
 
+      <section id="score-section" class="score">
+        <div class="score-header">
+          Your Data Exposure Score:
+          <span id="score-value">0</span>/100
+        </div>
+        <ul class="bars" id="score-bars">
+          <li data-factor="volume">
+            <span class="factor">Volume</span>
+            <span class="bar">░░░░░░░░░░</span>
+            <span class="val">0/30</span>
+          </li>
+          <li data-factor="categoryDiversity">
+            <span class="factor">Categories</span>
+            <span class="bar">░░░░░░░░░░</span>
+            <span class="val">0/30</span>
+          </li>
+          <li data-factor="geoExposure">
+            <span class="factor">Geography</span>
+            <span class="bar">░░░░░░░░░░</span>
+            <span class="val">0/25</span>
+          </li>
+          <li data-factor="continuity">
+            <span class="factor">Continuity</span>
+            <span class="bar">░░░░░░░░░░</span>
+            <span class="val">0/15</span>
+          </li>
+        </ul>
+        <div id="score-label" class="score-label">Exposition faible</div>
+      </section>
+
       <div id="subline" class="subline">0 requests total, across 0 endpoints</div>
 
       <ol id="top-list" class="top-list"></ol>
@@ -24,6 +54,6 @@
         <button id="toggle" type="button">Pause</button>
       </div>
     </main>
-    <script src="popup.js"></script>
+    <script type="module" src="popup.js"></script>
   </body>
 </html>

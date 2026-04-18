@@ -1,0 +1,33 @@
+[
+  { "domain_pattern": "mail.google.com", "category": "email", "label": "Email" },
+  { "domain_pattern": "outlook.live.com", "category": "email", "label": "Email" },
+  { "domain_pattern": "outlook.office.com", "category": "email", "label": "Email" },
+  { "domain_pattern": "*.proton.me", "category": "email", "label": "Email" },
+
+  { "domain_pattern": "github.com", "category": "code", "label": "Code & engineering" },
+  { "domain_pattern": "gitlab.com", "category": "code", "label": "Code & engineering" },
+  { "domain_pattern": "bitbucket.org", "category": "code", "label": "Code & engineering" },
+  { "domain_pattern": "*.stackoverflow.com", "category": "code", "label": "Code & engineering" },
+
+  { "domain_pattern": "docs.google.com", "category": "documents", "label": "Documents & notes" },
+  { "domain_pattern": "drive.google.com", "category": "documents", "label": "Documents & notes" },
+  { "domain_pattern": "*.notion.so", "category": "documents", "label": "Documents & notes" },
+  { "domain_pattern": "*.office.com", "category": "documents", "label": "Documents & notes" },
+  { "domain_pattern": "onedrive.live.com", "category": "documents", "label": "Documents & notes" },
+
+  { "domain_pattern": "app.slack.com", "category": "communications", "label": "Internal communications" },
+  { "domain_pattern": "*.slack.com", "category": "communications", "label": "Internal communications" },
+  { "domain_pattern": "teams.microsoft.com", "category": "communications", "label": "Internal communications" },
+  { "domain_pattern": "discord.com", "category": "communications", "label": "Internal communications" },
+
+  { "domain_pattern": "*.salesforce.com", "category": "crm", "label": "Customer data" },
+  { "domain_pattern": "*.hubspot.com", "category": "crm", "label": "Customer data" },
+  { "domain_pattern": "*.pipedrive.com", "category": "crm", "label": "Customer data" },
+
+  { "domain_pattern": "*.xero.com", "category": "finance", "label": "Financial data" },
+  { "domain_pattern": "*.quickbooks.com", "category": "finance", "label": "Financial data" },
+  { "domain_pattern": "dashboard.stripe.com", "category": "finance", "label": "Financial data" },
+
+  { "domain_pattern": "linkedin.com", "category": "professional", "label": "Professional network" },
+  { "domain_pattern": "*.linkedin.com", "category": "professional", "label": "Professional network" }
+]

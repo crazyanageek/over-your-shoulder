@@ -1,0 +1,158 @@
+Parfait — 203 requêtes pour quelques messages, c'est cohérent (ChatGPT fait pas mal d'appels internes : streaming, autocomplete, analytics, telemetry... chaque message = ~30-50 requêtes côté OpenAI). C'est déjà une première leçon pour ton rapport final : "vous pensez envoyer 1 message, il part en moyenne 30 requêtes." Très punchy.
+La structure storage est exactement ce qu'on voulait. Le Array(233) vs 203 dans les compteurs s'explique probablement par des requêtes en cours de onBeforeRequest qui n'ont pas encore eu leur onCompleted — normal.
+
+Commit et on avance. Envoie à Claude Code :
+Validated, counts are correct and pause/resume works. Commit and push with message: "feat: add webRequest interception with daily metadata storage and live popup counters".
+
+Prompt #3 — Catégorisation, géolocalisation, scoring
+À mettre dans prompts/03-scoring.txt :
+Implement categorization, geolocation, and the 4-factor Data Exposure Score for Over Your Shoulder. This phase transforms raw request counts into a meaningful, shareable score without touching any UI beyond the popup.
+
+=== Expand data/endpoints.json ===
+
+Replace the current flat structure with a richer schema. Each entry:
+{
+  "domain": "api.openai.com",
+  "name": "OpenAI API",
+  "vendor": "OpenAI",
+  "country": "US",
+  "category": "ai_api"
+}
+
+Include these 30 entries (add web-facing sibling domains to the existing API endpoints):
+
+OpenAI: api.openai.com, chatgpt.com, chat.openai.com, openai.com (vendor OpenAI, country US, category ai_api or ai_chat)
+Anthropic: api.anthropic.com, claude.ai (vendor Anthropic, country US, category ai_api or ai_chat)
+Google: generativelanguage.googleapis.com, gemini.google.com, aistudio.google.com (vendor Google, country US)
+Microsoft: copilot.microsoft.com, api.cognitive.microsoft.com (vendor Microsoft, country US)
+Mistral: api.mistral.ai, chat.mistral.ai (vendor Mistral, country FR)
+Cohere: api.cohere.com, dashboard.cohere.com (vendor Cohere, country CA)
+Perplexity: api.perplexity.ai, perplexity.ai, www.perplexity.ai (vendor Perplexity, country US)
+xAI: api.x.ai, grok.com, x.com/i/grok (vendor xAI, country US)
+HuggingFace: api-inference.huggingface.co, huggingface.co (vendor HuggingFace, country US)
+Together: api.together.xyz, api.together.ai (vendor Together, country US)
+Groq: api.groq.com (vendor Groq, country US)
+DeepSeek: api.deepseek.com, chat.deepseek.com (vendor DeepSeek, country CN)
+
+Update host_permissions in manifest.json to match all these domains.
+
+Use strict host equality (no subdomain wildcards for now — we keep matching precise and predictable).
+
+=== Create data/source_categories.json ===
+
+This maps the INITIATOR tab's domain (where the AI request came FROM) to a sensitivity category. This is what tells us "emails are leaking", "code is leaking", etc.
+
+Schema: array of { "domain_pattern": "string", "category": "string", "label": "string" }
+
+domain_pattern supports exact match and *.domain.com for subdomain match.
+
+Include entries like:
+- mail.google.com, outlook.live.com, outlook.office.com, *.proton.me → category "email", label "Email"
+- github.com, gitlab.com, bitbucket.org, *.stackoverflow.com → "code", "Code & engineering"
+- docs.google.com, drive.google.com, *.notion.so, *.office.com, onedrive.live.com → "documents", "Documents & notes"
+- *.slack.com, teams.microsoft.com, discord.com, app.slack.com → "communications", "Internal communications"
+- *.salesforce.com, *.hubspot.com, *.pipedrive.com → "crm", "Customer data"
+- *.xero.com, *.quickbooks.com, dashboard.stripe.com → "finance", "Financial data"
+- linkedin.com, *.linkedin.com → "professional", "Professional network"
+- Anything else → "other", "General browsing"
+
+The function "categorize(initiatorUrl)" returns the first matching category or "other".
+
+=== Update background/service_worker.js ===
+
+On each captured event, in addition to the existing metadata, also compute and store:
+- endpointVendor, endpointCountry, endpointCategory (looked up from data/endpoints.json)
+- sourceCategory, sourceLabel (looked up from data/source_categories.json using the event's initiator)
+
+Update oys_counters to include:
+- byCountry: { "US": N, "FR": N, "CN": N, ... }
+- bySourceCategory: { "email": N, "code": N, "documents": N, ... }
+- byVendor: { "OpenAI": N, "Anthropic": N, ... }
+
+=== Create lib/score.js ===
+
+Export a pure function computeScore(counters, daysActive) that returns:
+
+{
+  score: Number (0-100),
+  breakdown: {
+    volume: Number (0-30),
+    categoryDiversity: Number (0-30),
+    geoExposure: Number (0-25),
+    continuity: Number (0-15)
+  },
+  meta: {
+    totalRequests: Number,
+    categoriesDetected: Array<string>,
+    countries: Array<string>,
+    daysActive: Number,
+    usEquivalentShare: Number (0-1)
+  }
+}
+
+Formulas:
+
+F1 Volume (30 pts max):
+Math.min(30, 5 * Math.log10(totalRequests + 1))
+Caps out around 1000+ req/day.
+
+F2 Category diversity (30 pts max):
+5 points per distinct sensitive category detected in bySourceCategory, among: email, code, documents, communications, crm, finance, professional.
+Do NOT count "other".
+
+F3 Geographic exposure (25 pts max):
+Weight each country by sensitivity:
+- US = 1.0
+- CN = 1.0
+- UK = 0.6
+- CA = 0.5
+- EU (FR, DE, IT, ES, NL, BE, SE, IE, PL, etc.) = 0.4
+- CH = 0.1
+- unknown = 0.7 (default-high when we can't determine)
+usEquivalentShare = sum(weight * count) / totalRequests
+geoExposure = 25 * usEquivalentShare
+
+F4 Continuity (15 pts max):
+15 * Math.min(1, daysActive / 7)
+where daysActive = number of distinct oys_events_YYYYMMDD keys with at least 5 events.
+
+=== Update popup/popup.js ===
+
+Below the existing "X requests today" block, add a new section:
+
+"Your Data Exposure Score: NN/100"
+
+Use a color gradient based on the score:
+- 0-30 → green
+- 31-60 → amber
+- 61-100 → red
+
+Under the score, show 4 small bars (one per factor) with their contribution:
+- Volume      ████░░░░░░  18/30
+- Categories  ██░░░░░░░░  10/30
+- Geography   ███████░░░  22/25
+- Continuity  ██████░░░░  12/15
+
+Also show a 1-line label: "Exposition élevée" / "Exposition modérée" / "Exposition faible" depending on the score range.
+
+The score and bars refresh with the same 2-second tick as the counters.
+
+=== Important: DO NOT build the full shareable report yet ===
+
+This phase is ONLY about making the score computable and visible in the popup. The pretty report, map, PDF export, share buttons — all of that comes in the next phase. Keep styling in the popup functional, not beautiful.
+
+=== After implementation ===
+
+Tell me:
+1. My current score, broken down by factor
+2. How many days of data I have
+3. Any categories detected in my usage
+4. Any countries detected
+5. Any edge cases worth flagging (e.g., what happens if an initiator is undefined because the request came from another extension)
+
+=== Commit (only run this after the user has manually validated the feature works) ===
+
+Do NOT commit automatically. Wait for the user to say "validated, commit and push". When they do, run:
+  git add .
+  git commit -m "feat: add categorization, geolocation and 4-factor exposure score"
+  git push

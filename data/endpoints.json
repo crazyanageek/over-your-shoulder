@@ -1,17 +1,40 @@
 [
-  { "domain": "api.openai.com", "name": "OpenAI API", "category": "api" },
-  { "domain": "chatgpt.com", "name": "ChatGPT", "category": "chat" },
-  { "domain": "api.anthropic.com", "name": "Anthropic API", "category": "api" },
-  { "domain": "claude.ai", "name": "Claude", "category": "chat" },
-  { "domain": "generativelanguage.googleapis.com", "name": "Google Gemini API", "category": "api" },
-  { "domain": "gemini.google.com", "name": "Gemini", "category": "chat" },
-  { "domain": "api.mistral.ai", "name": "Mistral API", "category": "api" },
-  { "domain": "api.cohere.com", "name": "Cohere API", "category": "api" },
-  { "domain": "api.perplexity.ai", "name": "Perplexity", "category": "search" },
-  { "domain": "api.x.ai", "name": "xAI Grok API", "category": "api" },
-  { "domain": "copilot.microsoft.com", "name": "Microsoft Copilot", "category": "chat" },
-  { "domain": "api-inference.huggingface.co", "name": "Hugging Face Inference", "category": "api" },
-  { "domain": "api.together.xyz", "name": "Together AI", "category": "api" },
-  { "domain": "api.groq.com", "name": "Groq API", "category": "api" },
-  { "domain": "api.deepseek.com", "name": "DeepSeek API", "category": "api" }
+  { "domain": "api.openai.com", "name": "OpenAI API", "vendor": "OpenAI", "country": "US", "category": "ai_api" },
+  { "domain": "chatgpt.com", "name": "ChatGPT", "vendor": "OpenAI", "country": "US", "category": "ai_chat" },
+  { "domain": "chat.openai.com", "name": "ChatGPT (legacy)", "vendor": "OpenAI", "country": "US", "category": "ai_chat" },
+  { "domain": "openai.com", "name": "OpenAI", "vendor": "OpenAI", "country": "US", "category": "ai_chat" },
+
+  { "domain": "api.anthropic.com", "name": "Anthropic API", "vendor": "Anthropic", "country": "US", "category": "ai_api" },
+  { "domain": "claude.ai", "name": "Claude", "vendor": "Anthropic", "country": "US", "category": "ai_chat" },
+
+  { "domain": "generativelanguage.googleapis.com", "name": "Google Gemini API", "vendor": "Google", "country": "US", "category": "ai_api" },
+  { "domain": "gemini.google.com", "name": "Gemini", "vendor": "Google", "country": "US", "category": "ai_chat" },
+  { "domain": "aistudio.google.com", "name": "Google AI Studio", "vendor": "Google", "country": "US", "category": "ai_chat" },
+
+  { "domain": "copilot.microsoft.com", "name": "Microsoft Copilot", "vendor": "Microsoft", "country": "US", "category": "ai_chat" },
+  { "domain": "api.cognitive.microsoft.com", "name": "Azure Cognitive Services", "vendor": "Microsoft", "country": "US", "category": "ai_api" },
+
+  { "domain": "api.mistral.ai", "name": "Mistral API", "vendor": "Mistral", "country": "FR", "category": "ai_api" },
+  { "domain": "chat.mistral.ai", "name": "Le Chat", "vendor": "Mistral", "country": "FR", "category": "ai_chat" },
+
+  { "domain": "api.cohere.com", "name": "Cohere API", "vendor": "Cohere", "country": "CA", "category": "ai_api" },
+  { "domain": "dashboard.cohere.com", "name": "Cohere Dashboard", "vendor": "Cohere", "country": "CA", "category": "ai_chat" },
+
+  { "domain": "api.perplexity.ai", "name": "Perplexity API", "vendor": "Perplexity", "country": "US", "category": "ai_api" },
+  { "domain": "perplexity.ai", "name": "Perplexity", "vendor": "Perplexity", "country": "US", "category": "ai_chat" },
+  { "domain": "www.perplexity.ai", "name": "Perplexity (www)", "vendor": "Perplexity", "country": "US", "category": "ai_chat" },
+
+  { "domain": "api.x.ai", "name": "xAI API", "vendor": "xAI", "country": "US", "category": "ai_api" },
+  { "domain": "grok.com", "name": "Grok", "vendor": "xAI", "country": "US", "category": "ai_chat" },
+
+  { "domain": "api-inference.huggingface.co", "name": "Hugging Face Inference", "vendor": "HuggingFace", "country": "US", "category": "ai_api" },
+  { "domain": "huggingface.co", "name": "Hugging Face", "vendor": "HuggingFace", "country": "US", "category": "ai_chat" },
+
+  { "domain": "api.together.xyz", "name": "Together AI (xyz)", "vendor": "Together", "country": "US", "category": "ai_api" },
+  { "domain": "api.together.ai", "name": "Together AI", "vendor": "Together", "country": "US", "category": "ai_api" },
+
+  { "domain": "api.groq.com", "name": "Groq API", "vendor": "Groq", "country": "US", "category": "ai_api" },
+
+  { "domain": "api.deepseek.com", "name": "DeepSeek API", "vendor": "DeepSeek", "country": "CN", "category": "ai_api" },
+  { "domain": "chat.deepseek.com", "name": "DeepSeek Chat", "vendor": "DeepSeek", "country": "CN", "category": "ai_chat" }
 ]

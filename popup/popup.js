@@ -1,7 +1,18 @@
+import { computeScore } from "../lib/score.js";
+
 const STORAGE_KEY_ACTIVE = "oys_active";
 const STORAGE_KEY_COUNTERS = "oys_counters";
 const EVENTS_PREFIX = "oys_events_";
 const REFRESH_MS = 2000;
+const BAR_WIDTH = 10;
+const MIN_EVENTS_FOR_ACTIVE_DAY = 5;
+
+const BAR_MAX = {
+  volume: 30,
+  categoryDiversity: 30,
+  geoExposure: 25,
+  continuity: 15,
+};
 
 const todayCountEl = document.getElementById("today-count");
 const sublineEl = document.getElementById("subline");
@@ -9,6 +20,10 @@ const topListEl = document.getElementById("top-list");
 const statusEl = document.getElementById("status");
 const statusTextEl = statusEl.querySelector(".status-text");
 const toggleBtn = document.getElementById("toggle");
+const scoreSectionEl = document.getElementById("score-section");
+const scoreValueEl = document.getElementById("score-value");
+const scoreLabelEl = document.getElementById("score-label");
+const scoreBarsEl = document.getElementById("score-bars");
 
 function dayKey(ts = Date.now()) {
   const d = new Date(ts);
@@ -19,20 +34,53 @@ function dayKey(ts = Date.now()) {
 }
 
 function defaultCounters() {
-  return { total: 0, today: 0, todayDate: dayKey(), byHost: {}, byCategory: {} };
+  return {
+    total: 0,
+    today: 0,
+    todayDate: dayKey(),
+    byHost: {},
+    byCategory: {},
+    byCountry: {},
+    byVendor: {},
+    bySourceCategory: {},
+  };
+}
+
+function unicodeBar(value, max) {
+  if (!Number.isFinite(value) || max <= 0) return "░".repeat(BAR_WIDTH);
+  const filled = Math.max(0, Math.min(BAR_WIDTH, Math.round((value / max) * BAR_WIDTH)));
+  return "█".repeat(filled) + "░".repeat(BAR_WIDTH - filled);
+}
+
+function scoreBand(score) {
+  if (score <= 30) return "green";
+  if (score <= 60) return "amber";
+  return "red";
+}
+
+function scoreLabelText(score) {
+  if (score <= 30) return "Exposition faible";
+  if (score <= 60) return "Exposition modérée";
+  return "Exposition élevée";
+}
+
+function countDaysActive(all) {
+  let count = 0;
+  for (const [key, value] of Object.entries(all)) {
+    if (!key.startsWith(EVENTS_PREFIX)) continue;
+    if (Array.isArray(value) && value.length >= MIN_EVENTS_FOR_ACTIVE_DAY) count++;
+  }
+  return count;
 }
 
 async function refresh() {
-  const todayKey = EVENTS_PREFIX + dayKey();
-  const data = await chrome.storage.local.get({
-    [STORAGE_KEY_ACTIVE]: true,
-    [STORAGE_KEY_COUNTERS]: defaultCounters(),
-    [todayKey]: [],
-  });
-
-  const isActive = data[STORAGE_KEY_ACTIVE] !== false;
-  const counters = data[STORAGE_KEY_COUNTERS] || defaultCounters();
-  const todayEvents = Array.isArray(data[todayKey]) ? data[todayKey] : [];
+  const all = await chrome.storage.local.get(null);
+  const isActive = all[STORAGE_KEY_ACTIVE] !== false;
+  const counters = all[STORAGE_KEY_COUNTERS] || defaultCounters();
+  const todayEvents = Array.isArray(all[EVENTS_PREFIX + dayKey()])
+    ? all[EVENTS_PREFIX + dayKey()]
+    : [];
+  const daysActive = countDaysActive(all);
 
   const todayDisplay =
     counters.todayDate === dayKey() ? counters.today : todayEvents.length;
@@ -71,6 +119,21 @@ async function refresh() {
       li.append(nameEl, countEl);
       topListEl.appendChild(li);
     }
+  }
+
+  const { score, breakdown } = computeScore(counters, daysActive);
+  scoreValueEl.textContent = String(score);
+  scoreSectionEl.classList.remove("green", "amber", "red");
+  scoreSectionEl.classList.add(scoreBand(score));
+  scoreLabelEl.textContent = scoreLabelText(score);
+
+  for (const li of scoreBarsEl.querySelectorAll("li")) {
+    const factor = li.dataset.factor;
+    const val = breakdown[factor] ?? 0;
+    const max = BAR_MAX[factor];
+    li.querySelector(".bar").textContent = unicodeBar(val, max);
+    const display = Number.isInteger(val) ? val : val.toFixed(1);
+    li.querySelector(".val").textContent = `${display}/${max}`;
   }
 
   statusEl.classList.toggle("active", isActive);
