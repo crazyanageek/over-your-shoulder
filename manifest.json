@@ -3,7 +3,7 @@
   "name": "Over Your Shoulder",
   "version": "0.1.0",
   "description": "See where your AI queries actually go. All analysis stays on your device.",
-  "permissions": ["storage", "webRequest"],
+  "permissions": ["storage", "webRequest", "alarms"],
   "host_permissions": [
     "https://api.openai.com/*",
     "https://chatgpt.com/*",

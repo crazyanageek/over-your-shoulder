@@ -1,0 +1,68 @@
+Implement the real interception and storage logic for Over Your Shoulder. This phase adds functional behavior — all data stays in chrome.storage.local, nothing is ever transmitted externally.
+
+Scope of this phase:
+1. Service worker listens to outgoing requests to the 15 endpoints defined in data/endpoints.json
+2. For each matching request, persist metadata ONLY (no bodies, no headers, no response content)
+3. Popup shows live counters reading from storage
+4. Respect the existing pause/resume toggle
+
+=== background/service_worker.js ===
+
+On startup:
+- Load data/endpoints.json (fetch it from the extension bundle)
+- Build a Set of the 15 domains for fast matching
+- Read chrome.storage.local keys: oys_active (default true), oys_events (default []), oys_counters (default {})
+
+Register two listeners:
+- chrome.webRequest.onBeforeRequest with urls matching host_permissions, in observational (non-blocking) mode
+- chrome.webRequest.onCompleted with same filter
+
+On each onBeforeRequest:
+- If oys_active is false, skip
+- Extract: timestamp (Date.now()), hostname (from URL), pathname truncated to 50 chars, tabId, initiator domain (from request.initiator if present), request size estimated from Content-Length header only if passed natively (otherwise null)
+- Push into an in-memory ring buffer capped at 5000 events
+
+On each onCompleted for a previously seen request (match by requestId):
+- Add response status code and response size from responseHeaders Content-Length only
+- Never read response body
+
+Persistence strategy (to avoid hammering storage):
+- Flush the in-memory buffer to chrome.storage.local every 30 seconds OR when buffer reaches 100 entries
+- Storage key: oys_events_YYYYMMDD (one key per day, makes rotation trivial)
+- Separately maintain oys_counters = { total: N, today: N, byHost: { "api.openai.com": N, ... }, byCategory: { ... } }
+- Update oys_counters on each flush
+
+Rotation: on each flush, delete any oys_events_YYYYMMDD key older than 30 days. Keep the daily structure so we can compute time-windowed scores later.
+
+Listen for chrome.storage.onChanged on oys_active — log pause/resume transitions to console.
+
+=== popup/popup.html + popup.js ===
+
+Replace the minimal popup with this layout (keep it vanilla HTML/CSS, no frameworks):
+
+- Header: "Over Your Shoulder" (small, muted)
+- Big number: total requests today
+- Subline: "X requests total, across Y endpoints"
+- Small list: top 3 endpoints seen today with their counts
+- Status line: "Monitoring active" or "Paused" in colored text
+- Button: Pause / Resume (existing behavior)
+
+Data is read live from chrome.storage.local on popup open. Refresh the display every 2 seconds while the popup is visible.
+
+Keep styling minimal but readable. Use system fonts. Dark text on light background. No colors except: green dot for "active", gray for "paused", a single accent color for the big number.
+
+=== Important constraints ===
+
+- NEVER read request.requestBody
+- NEVER read request.requestHeaders beyond Content-Length
+- NEVER read response body
+- NEVER call fetch() or any outbound network from the extension itself
+- NEVER add analytics, telemetry, or error reporting that phones home
+- The entire extension must work offline
+
+=== After implementation ===
+
+Tell me:
+1. How to verify it works: steps to trigger a tracked request (e.g., open chatgpt.com and send a message), then what I should see in the popup within 30 seconds
+2. How to inspect raw stored data for debugging (chrome.storage inspector location)
+3. Any edge cases discovered (e.g., what happens if I open the popup before any request has been captured)

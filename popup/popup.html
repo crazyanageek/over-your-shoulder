@@ -7,9 +7,22 @@
   </head>
   <body>
     <main>
-      <h1>Over Your Shoulder</h1>
-      <p id="subtitle">Monitoring active</p>
-      <button id="toggle" type="button">Pause</button>
+      <header>Over Your Shoulder</header>
+
+      <div id="today-count" class="big">0</div>
+      <div id="today-label">requests today</div>
+
+      <div id="subline" class="subline">0 requests total, across 0 endpoints</div>
+
+      <ol id="top-list" class="top-list"></ol>
+
+      <div class="footer">
+        <div id="status" class="status active">
+          <span class="dot"></span>
+          <span class="status-text">Monitoring active</span>
+        </div>
+        <button id="toggle" type="button">Pause</button>
+      </div>
     </main>
     <script src="popup.js"></script>
   </body>
