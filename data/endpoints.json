@@ -1,0 +1,17 @@
+[
+  { "domain": "api.openai.com", "name": "OpenAI API", "category": "api" },
+  { "domain": "chatgpt.com", "name": "ChatGPT", "category": "chat" },
+  { "domain": "api.anthropic.com", "name": "Anthropic API", "category": "api" },
+  { "domain": "claude.ai", "name": "Claude", "category": "chat" },
+  { "domain": "generativelanguage.googleapis.com", "name": "Google Gemini API", "category": "api" },
+  { "domain": "gemini.google.com", "name": "Gemini", "category": "chat" },
+  { "domain": "api.mistral.ai", "name": "Mistral API", "category": "api" },
+  { "domain": "api.cohere.com", "name": "Cohere API", "category": "api" },
+  { "domain": "api.perplexity.ai", "name": "Perplexity", "category": "search" },
+  { "domain": "api.x.ai", "name": "xAI Grok API", "category": "api" },
+  { "domain": "copilot.microsoft.com", "name": "Microsoft Copilot", "category": "chat" },
+  { "domain": "api-inference.huggingface.co", "name": "Hugging Face Inference", "category": "api" },
+  { "domain": "api.together.xyz", "name": "Together AI", "category": "api" },
+  { "domain": "api.groq.com", "name": "Groq API", "category": "api" },
+  { "domain": "api.deepseek.com", "name": "DeepSeek API", "category": "api" }
+]

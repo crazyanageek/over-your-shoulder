@@ -1,0 +1,47 @@
+Set up a Chrome Manifest V3 extension called "Over Your Shoulder" in this repo. This is a scaffold-only task — do NOT implement interception or scoring logic yet. Goal: a clean, loadable extension structure that passes chrome://extensions validation with zero errors.
+Project structure to create:
+/manifest.json
+/background/service_worker.js
+/popup/popup.html
+/popup/popup.css
+/popup/popup.js
+/data/endpoints.json
+/icons/icon16.png, icon48.png, icon128.png (placeholder solid-color PNGs, simple dark circle)
+/README.md
+manifest.json requirements:
+
+Manifest version 3
+Name: "Over Your Shoulder"
+Version: "0.1.0"
+Description: "See where your AI queries actually go. All analysis stays on your device."
+Permissions: storage, webRequest
+Host permissions: match patterns for each domain in data/endpoints.json
+Background: service_worker pointing to background/service_worker.js, type module
+Action: default_popup pointing to popup/popup.html, default_icon set
+Icons referenced for 16, 48, 128
+
+data/endpoints.json:
+Array of objects { "domain": "...", "name": "...", "category": "chat|api|search" }. Include these 15 domains:
+api.openai.com, chatgpt.com, api.anthropic.com, claude.ai, generativelanguage.googleapis.com, gemini.google.com, api.mistral.ai, api.cohere.com, api.perplexity.ai, api.x.ai, copilot.microsoft.com, api-inference.huggingface.co, api.together.xyz, api.groq.com, api.deepseek.com.
+background/service_worker.js:
+Just a minimal scaffold with a console.log("OYS service worker loaded") on startup. No logic yet.
+popup/popup.html:
+Minimal page, 320x200px, centered content. Shows: "Over Your Shoulder" as header, a subtitle "Monitoring active", and a single toggle button labeled "Pause". No styling beyond clean, readable defaults — we'll handle design in a later phase.
+popup/popup.js:
+Wire the Pause button to toggle between "Pause" and "Resume" labels in local state. Persist state in chrome.storage.local under key oys_active (boolean, default true). No actual pausing logic — just UI state.
+README.md:
+Short, clear. Sections:
+
+What it is (2 sentences)
+Privacy model (bold, explicit): "Metadata only. We never read request bodies. We never read headers. We never read responses. No data leaves your browser, ever."
+How to load in dev mode (3 steps: load unpacked, etc.)
+License: "TBD — repository is private during development."
+
+Do not:
+
+Add any npm dependencies or build tooling (keep vanilla, no webpack/vite/esbuild)
+Add tests yet
+Implement webRequest listeners
+Add any network calls, telemetry, or analytics
+
+When done, tell me exactly how to load it in Chrome for dev testing, and confirm there are zero errors in chrome://extensions when the extension is loaded.

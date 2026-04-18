@@ -1,0 +1,41 @@
+{
+  "manifest_version": 3,
+  "name": "Over Your Shoulder",
+  "version": "0.1.0",
+  "description": "See where your AI queries actually go. All analysis stays on your device.",
+  "permissions": ["storage", "webRequest"],
+  "host_permissions": [
+    "https://api.openai.com/*",
+    "https://chatgpt.com/*",
+    "https://api.anthropic.com/*",
+    "https://claude.ai/*",
+    "https://generativelanguage.googleapis.com/*",
+    "https://gemini.google.com/*",
+    "https://api.mistral.ai/*",
+    "https://api.cohere.com/*",
+    "https://api.perplexity.ai/*",
+    "https://api.x.ai/*",
+    "https://copilot.microsoft.com/*",
+    "https://api-inference.huggingface.co/*",
+    "https://api.together.xyz/*",
+    "https://api.groq.com/*",
+    "https://api.deepseek.com/*"
+  ],
+  "background": {
+    "service_worker": "background/service_worker.js",
+    "type": "module"
+  },
+  "action": {
+    "default_popup": "popup/popup.html",
+    "default_icon": {
+      "16": "icons/icon16.png",
+      "48": "icons/icon48.png",
+      "128": "icons/icon128.png"
+    }
+  },
+  "icons": {
+    "16": "icons/icon16.png",
+    "48": "icons/icon48.png",
+    "128": "icons/icon128.png"
+  }
+}
