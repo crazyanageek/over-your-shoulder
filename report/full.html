@@ -1,0 +1,329 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <title>Over Your Shoulder — Full Report</title>
+    <link rel="icon" type="image/png" href="../icons/icon48.png" />
+    <link rel="stylesheet" href="fonts.css" />
+    <link rel="stylesheet" href="full.css" />
+  </head>
+  <body>
+    <button id="print-btn" class="print-button" type="button">Print or save as PDF</button>
+
+    <!-- ============================================================
+         PAGE 1 — COVER
+         ============================================================ -->
+    <section class="page page-cover">
+      <header class="cover-masthead">
+        <span class="title-mark">Over Your Shoulder</span>
+        <span class="date-generated" id="date-generated">19 April 2026</span>
+      </header>
+
+      <div class="cover-hero">
+        <div class="cover-hero-top">
+          <p class="cover-subtitle">Your personal data exposure report</p>
+          <p class="cover-hero-number" id="hero-number">2,060</p>
+        </div>
+        <p class="cover-caption">Requests your browser has sent to AI servers</p>
+        <p class="cover-caption-sub" id="cover-caption-sub">One request every 7 seconds of active AI use.</p>
+      </div>
+
+      <nav class="toc">
+        <p class="toc-header">Inside this report</p>
+        <div class="toc-entry"><span class="toc-num">02</span><span class="toc-title">What was overlooked today</span></div>
+        <div class="toc-entry"><span class="toc-num">03</span><span class="toc-title">The numbers behind the number</span></div>
+        <div class="toc-entry"><span class="toc-num">04</span><span class="toc-title">Understanding the score</span></div>
+        <div class="toc-entry"><span class="toc-num">05</span><span class="toc-title">What this report sees, and what it does not</span></div>
+        <div class="toc-entry"><span class="toc-num">06</span><span class="toc-title">The rules that follow your data</span></div>
+        <div class="toc-entry"><span class="toc-num">07</span><span class="toc-title">A short glossary</span></div>
+        <div class="toc-entry"><span class="toc-num">08</span><span class="toc-title">And now what?</span></div>
+      </nav>
+    </section>
+
+    <!-- ============================================================
+         PAGE 2 — What was overlooked today
+         ============================================================ -->
+    <section class="page page-overlooked">
+      <h1 class="h1">What was overlooked today</h1>
+      <div class="narrative">
+        <p>Here is what your browser did today. It sent its first request to an AI service at {firstTimeToday}, and its last at {lastTimeToday}. In between, you used {vendorList}. Every time you opened a conversation, scrolled back through a previous one, or left a tab sitting quietly in the background, your browser kept sending messages.</p>
+        <p>Lorem ipsum dolor sit amet, consectetur adipiscing elit. Sed do eiusmod tempor incididunt ut labore et dolore magna aliqua. Ut enim ad minim veniam, quis nostrud exercitation ullamco laboris nisi ut aliquip ex ea commodo consequat. Duis aute irure dolor in reprehenderit in voluptate velit esse cillum dolore eu fugiat nulla pariatur.</p>
+        <p>Excepteur sint occaecat cupidatat non proident, sunt in culpa qui officia deserunt mollit anim id est laborum. Sed ut perspiciatis unde omnis iste natus error sit voluptatem accusantium doloremque laudantium, totam rem aperiam, eaque ipsa quae ab illo inventore veritatis et quasi architecto beatae vitae dicta sunt explicabo.</p>
+        <p>Nemo enim ipsam voluptatem quia voluptas sit aspernatur aut odit aut fugit, sed quia consequuntur magni dolores eos qui ratione voluptatem sequi nesciunt. Neque porro quisquam est, qui dolorem ipsum quia dolor sit amet, consectetur, adipisci velit, sed quia non numquam eius modi tempora incidunt ut labore et dolore.</p>
+        <p>At vero eos et accusamus et iusto odio dignissimos ducimus qui blanditiis praesentium voluptatum deleniti atque corrupti quos dolores et quas molestias excepturi sint occaecati cupiditate non provident, similique sunt in culpa qui officia deserunt mollitia animi, id est laborum et dolorum fuga.</p>
+        <p>Et harum quidem rerum facilis est et expedita distinctio. Nam libero tempore, cum soluta nobis est eligendi optio cumque nihil impedit quo minus id quod maxime placeat facere possimus, omnis voluptas assumenda est. The next pages explain what this volume means, where these numbers come from, and what they do not show.</p>
+      </div>
+      <div class="page-number">02 / 08</div>
+    </section>
+
+    <!-- ============================================================
+         PAGE 3 — The numbers behind the number  (full mode: 2x2)
+         ============================================================ -->
+    <section class="page page-numbers">
+      <h1 class="h1">The numbers behind the number</h1>
+
+      <div class="blocks-grid">
+        <div class="block">
+          <h3 class="h3">Who received your data</h3>
+          <div class="block-chart chart-vendors">
+            <span class="block-chart-label">Chart: Vendors bar chart<br />(to be implemented in phase 05.4)</span>
+          </div>
+          <p class="block-legend">Lorem ipsum dolor sit amet, consectetur adipiscing elit.</p>
+          <div class="block-microlist">Total vendors contacted        —
+Top vendor share               —%
+Top vs. second vendor ratio    —x
+</div>
+        </div>
+
+        <div class="block">
+          <h3 class="h3">When your browser was talking</h3>
+          <div class="block-chart chart-hourly">
+            <span class="block-chart-label">Chart: Hourly histogram<br />(to be implemented in phase 05.4)</span>
+          </div>
+          <p class="block-legend">Lorem ipsum dolor sit amet consectetur adipiscing elit.</p>
+          <div class="block-microlist">First activity of the day      —
+Last activity of the day       —
+Peak hour                      —
+Peak hour volume               —
+Quiet hours                    —
+Daytime / nighttime ratio      —
+</div>
+        </div>
+
+        <div class="block">
+          <h3 class="h3">How your score has moved</h3>
+          <div class="block-chart chart-score">
+            <span class="block-chart-label">Chart: Score evolution curve<br />(to be implemented in phase 05.4)</span>
+          </div>
+          <p class="block-legend">Lorem ipsum dolor sit amet consectetur elit.</p>
+          <div class="block-microlist">Today's score                  — / 100
+Average over period            —
+Lowest recorded                —   on —
+Highest recorded               —   on —
+Trend                          —
+</div>
+        </div>
+
+        <div class="block">
+          <h3 class="h3">Everywhere your data went</h3>
+          <div class="block-chart chart-map">
+            <span class="block-chart-label">Chart: Enriched world map<br />(to be implemented in phase 05.4)</span>
+          </div>
+          <p class="block-legend">Lorem ipsum dolor sit amet consectetur adipiscing elit.</p>
+          <div class="block-microlist">Cities contacted               —
+Countries contacted            —
+Timezones crossed              —
+Cross-border traffic           —%
+Farthest destination           —
+Total distance traveled        — km
+</div>
+        </div>
+      </div>
+
+      <!-- Alternative light mode to be implemented in phase 05.2 -->
+      <div class="page-number">03 / 08</div>
+    </section>
+
+    <!-- ============================================================
+         PAGE 4 — Understanding the score
+         ============================================================ -->
+    <!-- NOTE: this page may overflow with current placeholders. Will be tuned with real content in phase 05.2. -->
+    <section class="page page-score">
+      <h1 class="h1">Understanding the score</h1>
+      <p>Lorem ipsum dolor sit amet, consectetur adipiscing elit. Sed do eiusmod tempor incididunt ut labore et dolore magna aliqua. Ut enim ad minim veniam, quis nostrud exercitation ullamco laboris nisi ut aliquip ex ea commodo consequat. Duis aute irure dolor in reprehenderit in voluptate velit esse cillum dolore eu fugiat nulla pariatur excepteur sint occaecat.</p>
+
+      <div class="score-section">
+        <h3 class="h3">Volume</h3>
+        <p>Lorem ipsum dolor sit amet, consectetur adipiscing elit. Sed do eiusmod tempor incididunt ut labore et dolore magna aliqua. Ut enim ad minim veniam, quis nostrud exercitation ullamco laboris nisi ut aliquip ex ea commodo consequat. Duis aute irure dolor in reprehenderit in voluptate velit esse cillum dolore eu fugiat nulla pariatur. Excepteur sint occaecat cupidatat non proident.</p>
+        <div class="score-microblock">Your contribution     — / 30
+Your daily average    — requests
+Percentile            —% of observed days exceed this
+</div>
+      </div>
+      <hr class="rule" />
+
+      <div class="score-section">
+        <h3 class="h3">Categories</h3>
+        <p>Lorem ipsum dolor sit amet, consectetur adipiscing elit. Sed do eiusmod tempor incididunt ut labore et dolore magna aliqua. Ut enim ad minim veniam, quis nostrud exercitation ullamco laboris nisi ut aliquip ex ea commodo consequat. Duis aute irure dolor in reprehenderit in voluptate velit esse cillum dolore eu fugiat nulla pariatur. Excepteur sint occaecat cupidatat non proident.</p>
+        <div class="score-microblock">Your contribution      — / 30
+Categories touched     — : —
+</div>
+      </div>
+      <hr class="rule" />
+
+      <div class="score-section">
+        <h3 class="h3">Geography</h3>
+        <p>Lorem ipsum dolor sit amet, consectetur adipiscing elit. Sed do eiusmod tempor incididunt ut labore et dolore magna aliqua. Ut enim ad minim veniam, quis nostrud exercitation ullamco laboris nisi ut aliquip ex ea commodo consequat. Duis aute irure dolor in reprehenderit in voluptate velit esse cillum dolore eu fugiat nulla pariatur. Excepteur sint occaecat cupidatat non proident.</p>
+        <div class="score-microblock">Your contribution           — / 25
+Top destination country     — (—%)
+Cross-border share          —%
+</div>
+      </div>
+      <hr class="rule" />
+
+      <div class="score-section">
+        <h3 class="h3">Continuity</h3>
+        <p>Lorem ipsum dolor sit amet, consectetur adipiscing elit. Sed do eiusmod tempor incididunt ut labore et dolore magna aliqua. Ut enim ad minim veniam, quis nostrud exercitation ullamco laboris nisi ut aliquip ex ea commodo consequat. Duis aute irure dolor in reprehenderit in voluptate velit esse cillum dolore eu fugiat nulla pariatur. Excepteur sint occaecat cupidatat non proident.</p>
+        <div class="score-microblock">Your contribution     — / 15
+Days observed         — of 7 needed for full score
+Current pace          —
+</div>
+      </div>
+      <div class="page-number">04 / 08</div>
+    </section>
+
+    <!-- ============================================================
+         PAGE 5 — What this report sees, and what it does not
+         ============================================================ -->
+    <!-- NOTE: this page may overflow with current placeholders. Will be tuned with real content in phase 05.2. -->
+    <section class="page page-sees">
+      <h1 class="h1">What this report sees, and what it does not</h1>
+      <p>Lorem ipsum dolor sit amet, consectetur adipiscing elit. Sed do eiusmod tempor incididunt ut labore et dolore magna aliqua. Ut enim ad minim veniam, quis nostrud exercitation ullamco laboris nisi ut aliquip ex ea commodo consequat. Duis aute irure dolor in reprehenderit in voluptate velit esse cillum dolore eu fugiat nulla pariatur.</p>
+
+      <h3 class="h3">What OYS records</h3>
+      <div class="records-table">
+        <div class="th">Field</div>
+        <div class="th">Used for</div>
+        <div>Timestamp</div><div>When the request was sent</div>
+        <div>Destination hostname</div><div>Which service received the request</div>
+        <div>Destination path</div><div>Category inference</div>
+        <div>Tab identifier</div><div>Counting requests per session</div>
+        <div>Source site</div><div>The page that initiated the request</div>
+      </div>
+      <p>Lorem ipsum dolor sit amet, consectetur adipiscing elit. Sed do eiusmod tempor incididunt ut labore et dolore magna aliqua. Ut enim ad minim veniam, quis nostrud exercitation ullamco laboris nisi ut aliquip ex ea commodo consequat.</p>
+
+      <h3 class="h3">What OYS does not record</h3>
+      <div class="records-table">
+        <div class="th">Not recorded</div>
+        <div class="th">Why not</div>
+        <div>Request body</div><div>Never read, never stored</div>
+        <div>Response body</div><div>Never read, never stored</div>
+        <div>Authorization headers</div><div>Never read, never stored</div>
+        <div>Cookies</div><div>Out of reach of the API used</div>
+        <div>Session identifiers</div><div>Not captured</div>
+        <div>File attachments</div><div>Not inspected</div>
+        <div>Full URL with query params</div><div>Only truncated path is kept</div>
+        <div>IP addresses</div><div>Not captured</div>
+      </div>
+      <p>Lorem ipsum dolor sit amet, consectetur adipiscing elit. Sed do eiusmod tempor incididunt ut labore et dolore magna aliqua. Ut enim ad minim veniam, quis nostrud exercitation ullamco laboris nisi ut aliquip ex ea commodo consequat.</p>
+
+      <h3 class="h3">How the numbers are computed</h3>
+      <p>Lorem ipsum dolor sit amet, consectetur adipiscing elit. Sed do eiusmod tempor incididunt ut labore et dolore magna aliqua. Ut enim ad minim veniam, quis nostrud exercitation ullamco laboris nisi ut aliquip ex ea commodo consequat. Duis aute irure dolor in reprehenderit.</p>
+
+      <h3 class="h3">Limits of this measurement</h3>
+      <p>Lorem ipsum dolor sit amet, consectetur adipiscing elit. Sed do eiusmod tempor incididunt ut labore et dolore magna aliqua. Ut enim ad minim veniam, quis nostrud exercitation ullamco laboris nisi ut aliquip ex ea commodo consequat.</p>
+      <div class="page-number">05 / 08</div>
+    </section>
+
+    <!-- ============================================================
+         PAGE 6 — The rules that follow your data
+         ============================================================ -->
+    <section class="page page-rules">
+      <h1 class="h1">The rules that follow your data</h1>
+      <p>Lorem ipsum dolor sit amet, consectetur adipiscing elit. Sed do eiusmod tempor incididunt ut labore et dolore magna aliqua. Ut enim ad minim veniam, quis nostrud exercitation ullamco laboris nisi ut aliquip ex ea commodo consequat. Duis aute irure dolor.</p>
+
+      <div class="rule-block">
+        <div class="rule-number">01</div>
+        <div class="rule-body">
+          <h3 class="h3">The US CLOUD Act</h3>
+          <p>The <a href="#">CLOUD Act</a> is an American law passed in 2018. Lorem ipsum dolor sit amet, consectetur adipiscing elit. Sed do eiusmod tempor incididunt ut labore et dolore magna aliqua. Ut enim ad minim veniam, quis nostrud exercitation ullamco laboris nisi ut aliquip ex ea commodo consequat. Duis aute irure dolor in reprehenderit.</p>
+        </div>
+      </div>
+
+      <div class="rule-block">
+        <div class="rule-number">02</div>
+        <div class="rule-body">
+          <h3 class="h3">The GDPR and Swiss equivalents</h3>
+          <p>In Europe, the <a href="#">General Data Protection Regulation</a> applies to any processing of personal data. Lorem ipsum dolor sit amet, consectetur adipiscing elit. Switzerland has a closely aligned framework, the <a href="#">revised Federal Act on Data Protection</a>, in force since September 2023.</p>
+        </div>
+      </div>
+
+      <div class="rule-block">
+        <div class="rule-number">03</div>
+        <div class="rule-body">
+          <h3 class="h3">Schrems II and Privacy Shield</h3>
+          <p>In 2020, the <a href="#">Court of Justice of the European Union ruled</a> that the Privacy Shield agreement between the EU and the US was invalid. Lorem ipsum dolor sit amet, consectetur adipiscing elit. Sed do eiusmod tempor incididunt ut labore et dolore magna aliqua.</p>
+        </div>
+      </div>
+
+      <div class="rule-block">
+        <div class="rule-number">04</div>
+        <div class="rule-body">
+          <h3 class="h3">China and the Cybersecurity Law</h3>
+          <p>Chinese AI services operate under a different legal framework. The <a href="#">Cybersecurity Law of 2017</a> and the <a href="#">Data Security Law of 2021</a> require companies to store data domestically. Lorem ipsum dolor sit amet, consectetur adipiscing elit.</p>
+        </div>
+      </div>
+
+      <div class="rule-block">
+        <div class="rule-number">05</div>
+        <div class="rule-body">
+          <h3 class="h3">Residency versus access</h3>
+          <p>Two questions are often confused: where is the data stored, and who can access it? Lorem ipsum dolor sit amet, consectetur adipiscing elit. Sed do eiusmod tempor incididunt ut labore et dolore magna aliqua.</p>
+        </div>
+      </div>
+      <div class="page-number">06 / 08</div>
+    </section>
+
+    <!-- ============================================================
+         PAGE 7 — A short glossary
+         ============================================================ -->
+    <section class="page page-glossary">
+      <h1 class="h1">A short glossary</h1>
+      <p>Lorem ipsum dolor sit amet, consectetur adipiscing elit. The terms below appear throughout this report. Definitions are kept brief and specific to how OYS uses them.</p>
+
+      <div class="glossary">
+        <div class="glossary-entry"><strong>AI service</strong> — Lorem ipsum dolor sit amet, consectetur adipiscing elit. Sed do eiusmod tempor incididunt ut labore et dolore magna aliqua.</div>
+        <div class="glossary-entry"><strong>API (Application Programming Interface)</strong> — Lorem ipsum dolor sit amet, consectetur adipiscing elit. Sed do eiusmod tempor incididunt ut labore.</div>
+        <div class="glossary-entry"><strong>Category</strong> — Lorem ipsum dolor sit amet, consectetur adipiscing elit. Sed do eiusmod tempor incididunt ut labore et dolore.</div>
+        <div class="glossary-entry"><strong>Cross-border request</strong> — Lorem ipsum dolor sit amet, consectetur adipiscing elit. Sed do eiusmod tempor incididunt ut labore.</div>
+        <div class="glossary-entry"><strong>Endpoint</strong> — Lorem ipsum dolor sit amet, consectetur adipiscing elit. Sed do eiusmod tempor incididunt ut labore et dolore magna aliqua.</div>
+        <div class="glossary-entry"><strong>Exposure score</strong> — Lorem ipsum dolor sit amet, consectetur adipiscing elit. Sed do eiusmod tempor incididunt ut labore et dolore.</div>
+        <div class="glossary-entry"><strong>Hostname</strong> — Lorem ipsum dolor sit amet, consectetur adipiscing elit. Sed do eiusmod tempor incididunt ut labore et dolore.</div>
+        <div class="glossary-entry"><strong>Metadata</strong> — Lorem ipsum dolor sit amet, consectetur adipiscing elit. Sed do eiusmod tempor incididunt ut labore et dolore magna aliqua.</div>
+        <div class="glossary-entry"><strong>Request</strong> — Lorem ipsum dolor sit amet, consectetur adipiscing elit. Sed do eiusmod tempor incididunt ut labore et dolore magna aliqua.</div>
+        <div class="glossary-entry"><strong>Session</strong> — Lorem ipsum dolor sit amet, consectetur adipiscing elit. Sed do eiusmod tempor incididunt ut labore et dolore magna aliqua.</div>
+        <div class="glossary-entry"><strong>Streaming</strong> — Lorem ipsum dolor sit amet, consectetur adipiscing elit. Sed do eiusmod tempor incididunt ut labore et dolore magna aliqua.</div>
+        <div class="glossary-entry"><strong>Vendor</strong> — Lorem ipsum dolor sit amet, consectetur adipiscing elit. Sed do eiusmod tempor incididunt ut labore et dolore magna.</div>
+        <div class="glossary-entry"><strong>Web interface</strong> — Lorem ipsum dolor sit amet, consectetur adipiscing elit. Sed do eiusmod tempor incididunt ut labore et dolore magna aliqua.</div>
+      </div>
+      <div class="page-number">07 / 08</div>
+    </section>
+
+    <!-- ============================================================
+         PAGE 8 — And now what?
+         ============================================================ -->
+    <section class="page page-now">
+      <h1 class="h1">And now what?</h1>
+      <p>Lorem ipsum dolor sit amet, consectetur adipiscing elit. Sed do eiusmod tempor incididunt ut labore et dolore magna aliqua. Ut enim ad minim veniam, quis nostrud exercitation ullamco laboris nisi ut aliquip ex ea commodo consequat. Duis aute irure dolor in reprehenderit in voluptate velit esse cillum dolore eu fugiat nulla pariatur.</p>
+
+      <div class="action-section">
+        <h3 class="h3">Know what you're agreeing to</h3>
+        <p>Lorem ipsum dolor sit amet, consectetur adipiscing elit. Sed do eiusmod tempor incididunt ut labore et dolore magna aliqua. Ut enim ad minim veniam, quis nostrud exercitation ullamco laboris nisi ut aliquip ex ea commodo consequat. Duis aute irure dolor in reprehenderit.</p>
+      </div>
+
+      <div class="action-section">
+        <h3 class="h3">Diversify, or consolidate on purpose</h3>
+        <p>Lorem ipsum dolor sit amet, consectetur adipiscing elit. Sed do eiusmod tempor incididunt ut labore et dolore magna aliqua. Ut enim ad minim veniam, quis nostrud exercitation ullamco laboris nisi ut aliquip ex ea commodo consequat.</p>
+      </div>
+
+      <div class="action-section">
+        <h3 class="h3">Consider where the service lives</h3>
+        <p>Lorem ipsum dolor sit amet, consectetur adipiscing elit. Sed do eiusmod tempor incididunt ut labore et dolore magna aliqua. Ut enim ad minim veniam, quis nostrud exercitation ullamco laboris nisi ut aliquip ex ea commodo consequat.</p>
+      </div>
+
+      <p class="closing-note">
+        <span class="lede">Over Your Shoulder is a tool for insight, not control.</span>
+        It tells you where your data goes. It does not stop it from going there. If the patterns shown in this report concern you, the right next step is to change your habits, not to install another extension. For organizations that want deeper visibility into AI-driven data flows, we are building <a href="https://my-insights.ch" target="_blank" rel="noopener">Symbiont</a>.
+      </p>
+
+      <div class="page-footer">
+        <div>overyourshoulder.ch · contact@overyourshoulder.ch</div>
+        <div>© <span id="footer-year">2026</span> <a href="https://my-insights.ch" target="_blank" rel="noopener">My Insights</a> · Switzerland</div>
+        <div>Report generated on <span id="footer-date">19 April 2026</span> at <span id="footer-time">—</span></div>
+      </div>
+      <div class="page-number">08 / 08</div>
+    </section>
+
+    <script src="full.js"></script>
+  </body>
+</html>

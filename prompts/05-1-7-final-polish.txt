@@ -1,0 +1,77 @@
+Phase 05.1.7 — Last polish pass before committing all of phase 05.1.
+
+Four fixes. After these, we commit the full 05.1 + 05.1.5 + 05.1.6 + 05.1.7 work as one feature.
+
+=== ISSUE 1 — Badge footer layout regression ===
+
+The "Download full report →" link currently sits on the same row as "🇨🇭 Nothing leaves your device", making the bottom of the badge cluttered.
+
+Reference the state before this link was added: "🇨🇭 Nothing leaves your device" was alone on its own row, aligned left. The row BELOW it held the DOWNLOAD CARD button + the social icons (LinkedIn, X).
+
+Restore this layout and move the "Download full report" link:
+
+A. "🇨🇭 Nothing leaves your device" — back to being alone on its own row, left-aligned.
+B. Move "Full Report" (shortened text — drop "Download", drop "→", just the two words with appropriate styling) onto the same row as DOWNLOAD CARD. Positioned to the right of the DOWNLOAD CARD button but before the social icons. Style: match the DOWNLOAD CARD button's visual weight — this is a secondary action, so slightly lighter (maybe outline style or smaller, but still clearly clickable).
+
+Keep in mind: the badge export (PNG download) must NOT include the "Full Report" link — it's a navigation element for the web view only, not something to render into the shareable image. Verify the export logic strips this link or that the class selector excludes it.
+
+=== ISSUE 2 — Cover page: remove one of the two horizontal rules ===
+
+The cover page currently shows two horizontal rules framing the hero/label/caption block. One at the top (between masthead and hero), one at the bottom (between caption and TOC).
+
+Remove ONE of them — whichever makes the page look cleaner and less boxed-in. My preference: remove the TOP rule (between masthead and hero). Keep the BOTTOM rule as the separator between the framed hero zone and the TOC list.
+
+Reasoning: the masthead already has its own visual identity. The space between masthead and hero doesn't need a rule to feel organized. But the separation between the hero zone and the TOC is structurally meaningful and benefits from a rule.
+
+=== ISSUE 3 — Favicons ===
+
+Verify both /report/index.html and /report/full.html have a favicon declared in their <head>.
+
+Use the existing /icons/icon16.png or /icons/icon48.png that's already bundled with the extension. Relative path from the report directory: "../icons/icon48.png".
+
+Declaration:
+  <link rel="icon" type="image/png" href="../icons/icon48.png">
+
+Add to both files if missing.
+
+=== ISSUE 4 — H1 font treatment on the PDF — use the badge's masthead style ===
+
+The badge LinkedIn has a distinctive title treatment on its masthead — the phrase "Who is looking over your shoulder?" uses a specific Fraunces configuration that reads as editorial-magazine, not as generic-serif. 
+
+Find the exact CSS rules applied to that masthead title in /report/styles.css (look for selectors like .mast, .masthead, .mast-title, .hero-title, or similar). Extract the relevant properties:
+- font-family
+- font-style (italic or normal)
+- font-weight
+- font-variation-settings (especially opsz)
+- font-size (may need adjusting for PDF context)
+- letter-spacing
+- line-height
+
+Apply this exact treatment to:
+A. All H1 page titles in full.css (.page h1)
+B. All entries in the Table of Contents on page 1 (.toc-entry or equivalent class) — the page titles listed in the TOC should match visually what the reader will see when they turn to that page
+
+Scale the font-size appropriately:
+- For H1 on pages 2-8: same treatment as badge masthead but sized for page-title context (likely around 30-36pt)
+- For TOC entries: smaller version (likely 14-16pt) but same font-family, style, weight, variation-settings
+
+Keep the current .h1 CSS rule as a comment block labeled "PREVIOUS" so we can compare if needed.
+
+=== VERIFICATION ===
+
+After fixes:
+
+1. Open /report/index.html (LinkedIn badge) — verify "🇨🇭 Nothing leaves your device" is alone on its row, and "Full Report" link sits next to DOWNLOAD CARD on the row below.
+2. Download the PNG of the badge — verify the "Full Report" link is NOT visible in the exported PNG.
+3. Open both /report/index.html and /report/full.html in tabs — check the browser tab favicon is the OYS icon, not a generic one.
+4. Export the PDF again — verify:
+   - Cover page has only ONE horizontal rule (the bottom one between the hero zone and TOC)
+   - H1 titles on pages 2-8 now render with the badge-masthead font treatment
+   - TOC entries on page 1 render with a matching (smaller) version of the same treatment
+
+Tell me:
+- Which CSS selector/rules you extracted from the badge masthead
+- Confirmation that the PNG export still works cleanly without the Full Report link
+- Any font rendering quirks introduced by the H1 change
+
+Do NOT commit yet. After I validate this, we commit the entire phase 05.1 work as a single comprehensive commit.

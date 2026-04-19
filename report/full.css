@@ -1,0 +1,580 @@
+:root {
+  --bg: #FAFAF7;
+  --ink: #0E0E0D;
+  --ink-muted: #666;
+  --ink-soft: #999;
+  --rule: #E8E5DD;
+  --alarm: #B91C1C;
+  --warn: #E28413;
+  --make-volume: #2B2B2A;
+  --make-cat: #BFA57A;
+  --make-geo: #B91C1C;
+  --make-cont: #3E5C66;
+  --chart-fill: #F2EFE8;
+}
+
+@page {
+  size: A4 portrait;
+  margin: 0;
+}
+
+*, *::before, *::after { box-sizing: border-box; }
+html, body { margin: 0; padding: 0; }
+
+body {
+  font-family: "Inter", -apple-system, system-ui, sans-serif;
+  color: var(--ink);
+  background: #CFCAB8;
+  font-size: 11pt;
+  line-height: 1.55;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  padding: 20mm 0;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 8mm;
+}
+
+/* =========================================================
+   Page shell
+   ========================================================= */
+.page {
+  width: 210mm;
+  height: 297mm;
+  background: var(--bg);
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.08), 0 12px 40px rgba(0, 0, 0, 0.12);
+  padding: 18mm 16mm;
+  position: relative;
+  overflow: hidden;
+  page-break-after: always;
+  break-after: page;
+}
+.page:last-child {
+  page-break-after: auto;
+  break-after: auto;
+}
+
+/* =========================================================
+   Typography
+   ========================================================= */
+/*
+ * PREVIOUS H1 (phase 05.1.5 — text-optical italic):
+ *   font-family: "Fraunces", Georgia, serif;
+ *   font-style: italic;
+ *   font-weight: 500;
+ *   font-variation-settings: "opsz" 36;
+ *   font-size: 32pt;
+ *   line-height: 1.15;
+ *   letter-spacing: -0.015em;
+ *   color: var(--ink);
+ *   margin: 0 0 7mm;
+ *
+ * Current H1 mirrors the badge hero-title ("Who is looking / over your
+ * shoulder?") — Fraunces non-italic at the display optical size,
+ * weight 500, tight tracking + tight line-height. Reads as
+ * editorial-magazine, not as generic-serif.
+ */
+.h1 {
+  font-family: "Fraunces", Georgia, serif;
+  font-style: normal;
+  font-weight: 500;
+  font-variation-settings: "opsz" 144;
+  font-size: 32pt;
+  line-height: 1.05;
+  letter-spacing: -0.02em;
+  color: var(--ink);
+  margin: 0 0 7mm;
+}
+.h2 {
+  font-family: "Fraunces", Georgia, serif;
+  font-style: italic;
+  font-weight: 500;
+  font-variation-settings: "opsz" 96;
+  font-size: 20pt;
+  line-height: 1.2;
+  letter-spacing: -0.01em;
+  color: var(--ink);
+  margin: 0 0 4mm;
+}
+.h3 {
+  font-family: "Inter", sans-serif;
+  font-weight: 600;
+  font-size: 10pt;
+  letter-spacing: 0.15em;
+  text-transform: uppercase;
+  color: var(--ink-muted);
+  margin: 0 0 3mm;
+}
+p {
+  margin: 0 0 4mm;
+}
+.mono {
+  font-family: "JetBrains Mono", Menlo, monospace;
+  font-size: 10pt;
+  line-height: 1.5;
+  color: var(--ink);
+}
+.caption {
+  font-family: "Inter", sans-serif;
+  font-style: italic;
+  font-size: 10pt;
+  color: var(--ink-muted);
+}
+.footnote {
+  font-family: "Inter", sans-serif;
+  font-size: 9pt;
+  color: var(--ink-soft);
+}
+.rule {
+  height: 1px;
+  background: var(--rule);
+  border: none;
+  margin: 3mm 0;
+}
+
+/* External links — consistent everywhere inside a .page (rules, closing note,
+   footer, etc.). Explicit override defeats the browser's default blue on <a>. */
+.page a {
+  color: var(--ink);
+  text-decoration: underline;
+  text-decoration-thickness: 1px;
+  text-underline-offset: 3px;
+}
+.page a:hover {
+  text-decoration-thickness: 2px;
+}
+
+/* Page number marker (bottom-right of pages 2-8; absent on cover). */
+.page-number {
+  position: absolute;
+  right: 16mm;
+  bottom: 14mm;
+  font-family: "JetBrains Mono", Menlo, monospace;
+  font-size: 9pt;
+  letter-spacing: 0.08em;
+  color: var(--ink-soft);
+}
+
+/* =========================================================
+   Print button (screen only)
+   ========================================================= */
+.print-button {
+  position: fixed;
+  top: 16px;
+  right: 16px;
+  z-index: 100;
+  font-family: "Inter", sans-serif;
+  font-weight: 600;
+  font-size: 11pt;
+  padding: 10px 18px;
+  background: var(--ink);
+  color: var(--bg);
+  border: 1px solid var(--ink);
+  border-radius: 2px;
+  cursor: pointer;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15);
+}
+.print-button:hover {
+  background: var(--bg);
+  color: var(--ink);
+}
+
+/* =========================================================
+   PAGE 1 — COVER
+   ========================================================= */
+.cover-masthead {
+  display: flex;
+  justify-content: space-between;
+  align-items: baseline;
+  padding-bottom: 4mm;
+}
+.cover-masthead .title-mark {
+  font-family: "Fraunces", Georgia, serif;
+  font-style: italic;
+  font-variation-settings: "opsz" 96;
+  font-weight: 500;
+  font-size: 18pt;
+  color: var(--ink);
+  letter-spacing: -0.01em;
+}
+.cover-masthead .date-generated {
+  font-family: "JetBrains Mono", Menlo, monospace;
+  font-size: 9pt;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: var(--ink-muted);
+}
+
+.cover-hero {
+  padding: 18mm 0 8mm;
+  border-bottom: 1px solid var(--ink);
+}
+.cover-hero-top {
+  display: grid;
+  grid-template-columns: 1fr auto;
+  column-gap: 10mm;
+  align-items: center;
+}
+.cover-subtitle {
+  font-family: "Fraunces", Georgia, serif;
+  font-style: italic;
+  font-weight: 400;
+  font-variation-settings: "opsz" 96;
+  font-size: 18pt;
+  line-height: 1.2;
+  letter-spacing: -0.01em;
+  color: var(--ink-muted);
+  max-width: 14ch;
+  margin: 0;
+}
+.cover-hero-number {
+  font-family: "Fraunces", Georgia, serif;
+  font-style: italic;
+  font-weight: 500;
+  font-variation-settings: "opsz" 144;
+  font-size: 144pt;
+  line-height: 0.85;
+  letter-spacing: -0.05em;
+  color: var(--alarm);
+  margin: 0;
+  text-align: right;
+}
+.cover-caption {
+  font-family: "Inter", sans-serif;
+  font-weight: 700;
+  font-size: 10pt;
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
+  color: var(--alarm);
+  margin: 8mm 0 0;
+}
+.cover-caption-sub {
+  font-family: "Fraunces", Georgia, serif;
+  font-style: italic;
+  font-weight: 400;
+  font-variation-settings: "opsz" 48;
+  font-size: 14pt;
+  line-height: 1.4;
+  letter-spacing: -0.005em;
+  color: var(--ink-muted);
+  margin: 4mm 0 0;
+  max-width: 140mm;
+}
+
+.toc {
+  margin-top: 16mm;
+  padding-top: 6mm;
+}
+.toc-header {
+  font-family: "Inter", sans-serif;
+  font-weight: 600;
+  font-size: 9pt;
+  letter-spacing: 0.15em;
+  text-transform: uppercase;
+  color: var(--ink-muted);
+  margin: 0 0 3mm;
+}
+.toc-entry {
+  display: grid;
+  grid-template-columns: 14mm 1fr;
+  gap: 4mm;
+  align-items: baseline;
+  padding: 2.2mm 0;
+  border-bottom: 1px solid var(--rule);
+}
+.toc-entry:last-child {
+  border-bottom: none;
+}
+.toc-num {
+  font-family: "JetBrains Mono", Menlo, monospace;
+  font-size: 10pt;
+  color: var(--ink-muted);
+}
+.toc-title {
+  /* Matches .h1 treatment at a smaller scale so each TOC entry looks like
+     a preview of the page title the reader will turn to. */
+  font-family: "Fraunces", Georgia, serif;
+  font-style: normal;
+  font-weight: 500;
+  font-variation-settings: "opsz" 144;
+  font-size: 15pt;
+  line-height: 1.2;
+  letter-spacing: -0.02em;
+  color: var(--ink);
+}
+
+/* =========================================================
+   PAGE 2 — What was overlooked today
+   ========================================================= */
+.narrative p {
+  font-family: "Inter", sans-serif;
+  font-size: 11pt;
+  line-height: 1.55;
+  margin-bottom: 4mm;
+  text-align: justify;
+  hyphens: auto;
+}
+
+/* =========================================================
+   PAGE 3 — The numbers behind the number
+   ========================================================= */
+.blocks-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  column-gap: 8mm;
+  row-gap: 8mm;
+  margin-top: 4mm;
+}
+.block {
+  display: flex;
+  flex-direction: column;
+}
+.block-chart {
+  background: var(--chart-fill);
+  border: 1px solid var(--rule);
+  border-radius: 2px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  text-align: center;
+  padding: 2mm;
+}
+.block-chart-label {
+  font-family: "Inter", sans-serif;
+  font-style: italic;
+  font-size: 9pt;
+  color: var(--ink-soft);
+}
+.block-legend {
+  font-family: "Fraunces", Georgia, serif;
+  font-style: italic;
+  font-weight: 400;
+  font-variation-settings: "opsz" 48;
+  font-size: 10pt;
+  line-height: 1.35;
+  color: var(--ink);
+  margin: 3mm 0 2mm;
+}
+.block-microlist {
+  font-family: "JetBrains Mono", Menlo, monospace;
+  font-size: 9pt;
+  line-height: 1.5;
+  color: var(--ink);
+  white-space: pre;
+}
+
+/* Chart-specific sizings — see editorial page 3 for values. */
+.chart-vendors,
+.chart-hourly,
+.chart-score {
+  width: 85mm;
+  height: 55mm;
+}
+.chart-map {
+  width: 85mm;
+  height: 65mm;
+}
+
+/* =========================================================
+   PAGE 4 — Understanding the score
+   ========================================================= */
+.score-section {
+  margin-bottom: 2.5mm;
+}
+.score-section p {
+  margin-bottom: 2.5mm;
+}
+.score-microblock {
+  font-family: "JetBrains Mono", Menlo, monospace;
+  font-size: 9.5pt;
+  line-height: 1.45;
+  color: var(--ink);
+  white-space: pre;
+  padding: 2.5mm 4mm;
+  background: var(--chart-fill);
+  border-radius: 2px;
+}
+
+/* Tighten page 4 + 5 so placeholder content fits A4 without overflow. Real
+   editorial content in 05.2 will stay within these constraints. */
+.page-score,
+.page-sees {
+  font-size: 10.5pt;
+  line-height: 1.5;
+}
+.page-score .h1,
+.page-sees .h1 {
+  margin-bottom: 5mm;
+}
+.page-score > p,
+.page-sees > p {
+  margin-bottom: 3mm;
+}
+.page-score .rule {
+  margin: 2mm 0;
+}
+.page-sees .h3 {
+  margin: 3mm 0 2mm;
+}
+
+/* =========================================================
+   PAGE 5 — What this report sees, and what it does not
+   ========================================================= */
+.records-table {
+  display: grid;
+  grid-template-columns: 70mm 1fr;
+  gap: 0.8mm 6mm;
+  font-family: "JetBrains Mono", Menlo, monospace;
+  font-size: 9.5pt;
+  line-height: 1.45;
+  color: var(--ink);
+  margin: 2mm 0 3mm;
+  padding: 2.5mm 4mm;
+  background: var(--chart-fill);
+  border-radius: 2px;
+}
+.records-table .th {
+  font-weight: 500;
+  color: var(--ink-muted);
+  border-bottom: 1px solid var(--rule);
+  padding-bottom: 1.5mm;
+  margin-bottom: 1mm;
+}
+
+/* =========================================================
+   PAGE 6 — The rules that follow your data
+   ========================================================= */
+.rule-block {
+  display: grid;
+  grid-template-columns: 22mm 1fr;
+  gap: 4mm;
+  padding: 4mm 0;
+  border-bottom: 1px solid var(--rule);
+}
+.rule-block:last-of-type {
+  border-bottom: none;
+}
+.rule-number {
+  font-family: "Fraunces", Georgia, serif;
+  font-style: italic;
+  font-weight: 400;
+  font-variation-settings: "opsz" 144;
+  font-size: 32pt;
+  line-height: 1;
+  color: var(--ink-soft);
+}
+.rule-body {
+  font-family: "Inter", sans-serif;
+  font-size: 11pt;
+  line-height: 1.55;
+  color: var(--ink);
+}
+.rule-body a {
+  color: var(--ink);
+  text-decoration: underline;
+  text-decoration-thickness: 1px;
+  text-underline-offset: 3px;
+}
+.rule-body a:hover {
+  text-decoration-thickness: 2px;
+}
+
+/* =========================================================
+   PAGE 7 — Glossary
+   ========================================================= */
+.glossary {
+  column-count: 2;
+  column-gap: 8mm;
+  column-rule: 1px solid var(--rule);
+}
+.glossary-entry {
+  break-inside: avoid;
+  margin: 0 0 4mm;
+  font-family: "Inter", sans-serif;
+  font-size: 10.5pt;
+  line-height: 1.45;
+  color: var(--ink);
+}
+.glossary-entry strong {
+  font-weight: 600;
+  font-size: 11pt;
+}
+
+/* =========================================================
+   PAGE 8 — And now what?
+   ========================================================= */
+.action-section {
+  padding: 4mm 0;
+  border-bottom: 1px solid var(--rule);
+}
+.action-section:last-of-type {
+  border-bottom: none;
+}
+.closing-note {
+  margin-top: 6mm;
+  padding: 5mm 0;
+  border-top: 1px solid var(--ink);
+  border-bottom: 1px solid var(--ink);
+  font-family: "Inter", sans-serif;
+  font-size: 11pt;
+  line-height: 1.6;
+  color: var(--ink);
+}
+.closing-note .lede {
+  font-family: "Fraunces", Georgia, serif;
+  font-style: italic;
+  font-weight: 400;
+  font-variation-settings: "opsz" 72;
+  font-size: 13pt;
+  color: var(--ink);
+  margin-right: 0.25em;
+}
+.page-footer {
+  position: absolute;
+  left: 16mm;
+  right: 16mm;
+  bottom: 20mm; /* 6mm clearance above the page-number marker */
+  font-family: "Inter", sans-serif;
+  font-size: 9pt;
+  color: var(--ink-soft);
+  line-height: 1.5;
+}
+.page-footer a {
+  color: var(--ink-soft);
+  text-decoration: underline;
+  text-decoration-thickness: 1px;
+  text-underline-offset: 3px;
+}
+
+/* =========================================================
+   @media print — only rules needed for Save-as-PDF
+   ========================================================= */
+@media print {
+  .print-button {
+    display: none;
+  }
+  body {
+    background: white;
+    padding: 0;
+    gap: 0;
+    display: block;
+  }
+  .page {
+    margin: 0;
+    width: 210mm;
+    height: 297mm;
+    box-shadow: none;
+    page-break-after: always;
+    break-after: page;
+  }
+  .page:last-child {
+    page-break-after: auto;
+    break-after: auto;
+  }
+  a {
+    color: var(--ink);
+    text-decoration: underline;
+    text-decoration-thickness: 1px;
+  }
+}

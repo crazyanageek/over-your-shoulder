@@ -1,0 +1,63 @@
+Phase 05.1.6 — Final polish pass on the PDF scaffold before filling real content.
+
+Three issues to fix. Everything else from 05.1.5 is validated.
+
+=== ISSUE 1 — Cover caption layout and content ===
+
+On page 1, the red alarm label "REQUESTS YOUR BROWSER HAS SENT TO AI SERVERS" and the caption below it are currently positioned ABOVE the horizontal rule, orphaned visually.
+
+Two changes:
+
+A. Reposition: both the red label AND the caption below it must sit BETWEEN the two horizontal rules that frame them. They form a single grouped block with the hero number. Visually: rule → red label → caption → rule → hero number OR hero number → rule → red label → caption → rule, depending on the current layout — the point is both label and caption are enclosed in the same framed section.
+
+B. Change caption content: 
+- Current: "2,060 requests sent in 27 minutes of active use today."
+- New: "One request every {secondsPerRequest} seconds of active AI use."
+
+Reasoning: the hero number (2,060) is already visible right next to this caption. Repeating it is noise. The rhythm metric is new information that deepens understanding. Also, remove "today" — this is the total since install, not a daily metric.
+
+Placeholder value for the scaffold: "One request every 7 seconds of active AI use."
+
+Style: same as current (Fraunces italic 14pt at opsz 48, ink-muted, 140mm max-width).
+
+=== ISSUE 2 — Page 3 block titles too visually similar to H1 ===
+
+The 4 block titles on page 3 ("Who received your data", "When your browser was talking", "How your score has moved", "Everywhere your data went") currently use the same Fraunces italic treatment as the H1 page title. This creates visual redundancy and hurts scannability at the block level.
+
+Fix: change these block titles to the H3 style defined in the editorial spec:
+- font-family: Inter
+- font-weight: 600
+- text-transform: uppercase
+- font-size: 10pt
+- letter-spacing: 0.15em
+- color: var(--ink-muted)
+- line-height: 1.4
+
+Keep the H1 page title "The numbers behind the number" in its current Fraunces italic style.
+
+This creates visual hierarchy: big Fraunces H1 for the page itself, then small uppercase Inter labels for each of the 4 data blocks below. Matches the label aesthetic used elsewhere in the badge and report.
+
+Apply the same H3 style to:
+- Page 3 block titles (4 of them)
+- Page 4 section titles ("Volume", "Categories", "Geography", "Continuity") if they're currently using a different style — check and align
+- Page 8 action section titles ("Know what you're agreeing to", "Diversify, or consolidate on purpose", "Consider where the service lives") — same treatment
+- Page 6 rule block numbers/titles — keep them distinct if they're currently styled differently (they may use a large numeric display font; don't break that)
+
+Goal: every sub-section within a page uses the same H3 treatment (small uppercase Inter), while every page title uses the Fraunces italic H1.
+
+=== ISSUE 3 — Overflow on pages 4 and 5 ===
+
+Known issue: placeholder content on pages 4 and 5 currently overflows slightly. No fix required for this phase. We'll address it in phase 05.2 once real editorial content is in place, since the content length will be known precisely.
+
+Leave a HTML comment at the top of pages 4 and 5 in full.html:
+
+  <!-- NOTE: this page may overflow with current placeholders. Will be tuned with real content in phase 05.2. -->
+
+=== VERIFICATION ===
+
+After fixes, re-export the PDF. Tell me:
+1. Whether the cover caption now sits properly between the rules
+2. Whether page 3 block titles are now visually distinct from the H1
+3. Confirm the H3 style is consistent across pages 3, 4, and 8
+
+Do NOT commit yet. I'll validate visually.

@@ -1,0 +1,247 @@
+Phase 05.1 — Scaffold HTML + CSS + JS for the OYS full PDF report.
+
+This phase creates the empty structural shell of the 8-page A4 PDF report. No editorial text yet (except the real titles and section headers). No dynamic tokens wired yet. No charts implemented. Just the skeleton, typography, layout, and navigation.
+
+=== REFERENCE DOCUMENT ===
+
+Read the file `prompts/phase-05-editorial.md` at the project root. It contains the full editorial plan: 8 pages, their titles, sections, intended tokens, and styling constraints. The scaffold you build must match this plan structurally so that phases 05.2 / 05.3 / 05.4 can slot content and charts in without reworking the layout.
+
+=== GOAL ===
+
+Produce three new files in `/report/`:
+
+1. `/report/full.html` — HTML structure of all 8 pages, stacked vertically, each page a `<section class="page">` with `page-break-after: always`.
+2. `/report/full.css` — all styling, A4 portrait dimensions, typography, print-ready rules.
+3. `/report/full.js` — minimal JavaScript: "Print or save as PDF" button handler + any dynamic elements that will need hooks later.
+
+Plus one integration touch:
+
+4. Add a "Download full report →" link at the bottom of the LinkedIn badge (`/report/index.html`), next to the existing "Download PNG" button, in the last row of the badge footer area. Clicking this link opens `/report/full.html` in a new tab.
+
+=== GLOBAL LAYOUT CONSTRAINTS ===
+
+**Format**: A4 portrait, 210mm × 297mm.
+**Margins**: inner padding of 18mm top, 18mm bottom, 16mm left, 16mm right (give the page a real margin that matches professional documents).
+**Dimensions**: use `@page { size: A4 portrait; margin: 0; }` in CSS, then set each `.page` to `width: 210mm; height: 297mm` with padding inside.
+**Page break**: `page-break-after: always` on each `.page` except the last.
+**Background**: `--bg #FAFAF7` (same as badge).
+**Text color**: `--ink #0E0E0D`.
+**Fonts**: bundle Fraunces (titles), Inter (body), JetBrains Mono (data/code) — REUSE THE FONT FILES already bundled in `/report/fonts/` from phase 04.5.2. Do NOT re-download them, do NOT link to Google Fonts.
+
+**CSS variables** (at root of full.css, same palette as the badge):
+:root {
+--bg: #FAFAF7;
+--ink: #0E0E0D;
+--ink-muted: #666;
+--ink-soft: #999;
+--rule: #E8E5DD;
+--alarm: #B91C1C;
+--warn: #E28413;
+--make-volume: #2B2B2A;
+--make-cat: #BFA57A;
+--make-geo: #B91C1C;
+--make-cont: #3E5C66;
+}
+
+**Typography scales**:
+- H1 (page title): Fraunces italic, 32pt, line-height 1.1, ink color
+- H2 (section title): Fraunces italic, 20pt, line-height 1.2, ink color
+- H3 (sub-section): Inter 600 uppercase, 10pt, letter-spacing 0.15em, ink-muted color
+- Body: Inter 400, 11pt, line-height 1.55, ink color
+- Data/mono: JetBrains Mono 400, 10pt, line-height 1.5, ink color
+- Caption/hint: Inter 400 italic, 10pt, ink-muted color
+- Footer text: Inter 400, 9pt, ink-soft color
+
+**Horizontal rules**: 1px solid `--rule`, used as section separators, never for decoration.
+
+=== PAGE-BY-PAGE SCAFFOLD ===
+
+### PAGE 1 — Cover
+
+Structure:
+- Top zone: masthead row with "Over Your Shoulder" in Fraunces + date generated on the right
+- Middle zone: hero split — left column has subtitle "Your personal data exposure report", right column has the hero number placeholder (very large Fraunces italic, approx 144pt)
+- Below hero: the phrase "REQUESTS YOUR BROWSER HAS SENT TO AI SERVERS" in uppercase Inter with the alarm red color
+- Bottom zone: the mini table of contents
+
+**Mini table of contents** (7 entries, pages 2-8):
+02   What was overlooked today
+03   The numbers behind the number
+04   Understanding the score
+05   What this report sees, and what it does not
+06   The rules that follow your data
+07   A short glossary
+08   And now what?
+
+Style: each entry is a line with the page number in JetBrains Mono (left, 2 digits, ink-muted), then the title in Fraunces italic (right-aligned or left-aligned after tab, ink color). Thin rule of 1px between lines. No clickable anchors for now — this is print-first.
+
+Placeholder tokens in page 1:
+- `{heroNumber}` for the big number (use `2,060` as a visible placeholder)
+- `{dateGenerated}` for the date (use `19 April 2026` as visible placeholder)
+
+### PAGE 2 — What was overlooked today
+
+Structure:
+- H1 title: "What was overlooked today"
+- Body text area: placeholder paragraph — use this exact text as placeholder so the layout is representative:
+Here is what your browser did today.
+It sent its first request to an AI service at {firstTimeToday}, and its last at {lastTimeToday}. In between, you used {vendorList}. [... narrative continues ...]
+[... full paragraph will be filled in phase 05.2 ...]
+
+Keep the placeholder short but realistic in length — about 6 paragraphs of ~60 words each to match the 280-350 word target. Use Lorem ipsum AFTER the first real sentence to fill the rest. This way the visual weight is accurate.
+
+### PAGE 3 — The numbers behind the number
+
+Structure:
+- H1 title: "The numbers behind the number"
+- 4 blocks arranged in a 2x2 grid for full mode, or stacked for light mode.
+
+For each block, create a placeholder with:
+- H2 block title (e.g. "Who received your data")
+- A grey rectangle representing the chart, sized to its final dimensions:
+  - Block 1 (vendors bar chart): width 85mm × height 55mm
+  - Block 2 (hourly histogram): width 85mm × height 55mm
+  - Block 3 (score evolution curve): width 85mm × height 55mm
+  - Block 4 (enriched map): width 85mm × height 65mm (slightly taller)
+- A legend placeholder below: italic Fraunces, 1-2 lines of Lorem ipsum in the correct size
+- A micro-list placeholder below the legend: mono 10pt, 4-6 lines with visible grid (e.g. "Label    Value" with monospace alignment)
+
+The grey rectangles should have a 1px border in `--rule`, a light cream fill (slightly darker than bg, `#F2EFE8` for example), and a small text inside in ink-soft saying e.g. "Chart: Vendors bar chart (to be implemented in phase 05.4)".
+
+In light mode (2 blocks), blocks 1 and 4 occupy more vertical space each, and a pedagogical note replaces blocks 2 and 3. For the scaffold, you can show one visual state (pick full mode) and include a comment in HTML saying `<!-- Alternative light mode to be implemented in phase 05.2 -->`.
+
+### PAGE 4 — Understanding the score
+
+Structure:
+- H1 title: "Understanding the score"
+- Intro paragraph placeholder (Lorem ipsum, ~80 words)
+- 4 sections, each with:
+  - H3 section title ("Volume", "Categories", "Geography", "Continuity")
+  - Body paragraph placeholder (~100 words Lorem ipsum)
+  - Micro-block with 3 lines of mono text, aligned:
+Your contribution     XX / 30
+Your daily average    XX requests
+Percentile            XX%
+  - A thin rule between each section
+
+### PAGE 5 — What this report sees, and what it does not
+
+Structure:
+- H1 title: "What this report sees, and what it does not"
+- Intro paragraph placeholder
+- Section "What OYS records": a 5-line table in monospace font, two columns
+- Text paragraph under the table
+- Section "What OYS does not record": similar 8-line table, two columns
+- Text paragraph under the table
+- Section "How the numbers are computed": text paragraph
+- Section "Limits of this measurement": text paragraph
+
+The tables are NOT HTML tables — use CSS grid with monospace font and a left padding to align the two columns. Fixed-width left column (~70mm), right column takes the rest.
+
+### PAGE 6 — The rules that follow your data
+
+Structure:
+- H1 title: "The rules that follow your data"
+- Intro paragraph placeholder
+- 5 numbered blocks, each with:
+  - A small number in big Fraunces italic on the left (01, 02, 03, 04, 05) or a section title (bloc 1 "The US CLOUD Act", etc.)
+  - Body paragraph placeholder with Lorem ipsum (but include a visible hyperlink style on 2-3 words per block so we can see the link styling)
+
+Hyperlinks styling: `--ink` color, thin 1px solid underline, `text-decoration-offset: 3px`. Must NOT be blue or colored. In `@media print`, they stay the same style (no special print override).
+
+### PAGE 7 — A short glossary
+
+Structure:
+- H1 title: "A short glossary"
+- Intro paragraph
+- Two-column layout of glossary terms (CSS columns or flexbox with 2 equal columns)
+- 13 placeholder entries, each with:
+  - **Term name** (Inter 600, 11pt, ink color) followed by " — "
+  - Definition (Inter 400, 11pt, ink color, 2-3 lines of Lorem ipsum)
+- Small space between entries (8pt vertical margin)
+
+Use real term names from `phase-05-editorial.md` (AI service, API, Category, etc.) even if definitions are Lorem ipsum. This way the visual weight per term matches the real content.
+
+### PAGE 8 — And now what?
+
+Structure:
+- H1 title: "And now what?"
+- Intro paragraph placeholder (~80 words Lorem ipsum)
+- 3 action sections, each with:
+  - H3 section title ("Know what you're agreeing to", "Diversify, or consolidate on purpose", "Consider where the service lives")
+  - Body paragraph (~100 words Lorem ipsum)
+  - Thin rule between each
+- Closing note: a paragraph with slightly different styling (italic Fraunces for first phrase, then Inter for the rest)
+- Footer block:
+  - overyourshoulder.ch · contact@overyourshoulder.ch
+  - © {year} [My Insights](https://my-insights.ch) · Lausanne, Switzerland
+  - Report generated on {date} at {time}
+
+=== PRINT BUTTON ===
+
+Add a prominent button in the top-right corner of page 1 (above the masthead, or floating if easier):
+[ Print or save as PDF ]
+
+Style: Inter 600, 11pt, background `--ink`, color `--bg`, padding 10px 18px, rounded 2px. Hover: inverse colors. Cursor: pointer.
+
+On click: `window.print()`.
+
+In `@media print`, this button is hidden (`display: none`).
+
+=== INTEGRATION INTO THE BADGE (index.html) ===
+
+In the existing `/report/index.html`, find the footer area at the bottom of the badge (last line, where "🇨🇭 Nothing leaves your device" currently sits).
+
+Add, to the right of that phrase, a small text link: "Download full report →"
+
+Style: Inter 400 italic, 10pt, ink-muted color, hover underline.
+
+Clicking the link opens `full.html` in a new tab: `<a href="full.html" target="_blank">Download full report →</a>`.
+
+This is the ONLY place this link appears. Not in the popup, not elsewhere.
+
+=== PRINT-READY CSS RULES ===
+
+In `full.css`, include these print-specific rules at the bottom:
+
+```css
+@media print {
+  .print-button {
+    display: none;
+  }
+  .page {
+    margin: 0;
+    page-break-after: always;
+  }
+  .page:last-child {
+    page-break-after: auto;
+  }
+  body {
+    background: white;
+  }
+  /* Ensure links remain visible but not colored */
+  a {
+    color: var(--ink);
+    text-decoration: underline;
+    text-decoration-thickness: 1px;
+  }
+}
+```
+
+=== DELIVERABLE ===
+
+After running this prompt:
+1. Open `/report/full.html` in Chrome
+2. Scroll through and verify the 8 pages are present with correct titles, layout, and placeholder structure
+3. Click "Print or save as PDF" — the print dialog opens
+4. Select "Save as PDF" in destination, A4 portrait, margins "minimum"
+5. Save and open the resulting PDF
+6. Verify: 8 pages, no content overflowing, titles readable, layouts balanced, fonts loaded, placeholder rectangles visible for charts
+
+Tell me:
+- Whether the 8 pages render correctly in print
+- Any visual issues (overflow, font fallback, alignment problems)
+- The resulting PDF file size
+- A summary of what works and what needs polishing in phase 05.2
+
+Do NOT commit yet. I'll validate visually before committing.

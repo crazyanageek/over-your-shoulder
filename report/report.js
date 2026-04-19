@@ -834,8 +834,10 @@ async function downloadCard() {
     // 600x750 without shrinking into a corner of the exported canvas.
     clone.style.transform = "none";
     clone.style.position = "static";
-    const shareGroup = clone.querySelector(".share-group");
-    if (shareGroup) shareGroup.remove();
+    // The Option-A footer has two .share-group nodes (icons row + buttons row);
+    // strip both so the exported PNG keeps only the flag + tagline.
+    const shareGroups = clone.querySelectorAll(".share-group");
+    shareGroups.forEach((el) => el.remove());
 
     const serializer = new XMLSerializer();
     const badgeHtml = serializer.serializeToString(clone);

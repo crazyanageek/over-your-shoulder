@@ -1,0 +1,76 @@
+Phase 05.1.8 — Final fixes on the scaffold before committing.
+
+Five issues. Issue 5 is a blocking bug (download card broken). Fix it first.
+
+=== ISSUE 5 (BLOCKING) — Download card button does nothing ===
+
+After the 05.1.7 footer restructure, clicking "↓ Download card" on the badge (/report/index.html) triggers no action.
+
+Diagnostic steps:
+1. Open DevTools console on /report/index.html, click the button, observe any error.
+2. Check the event listener attachment in /report/report.js — is the selector still matching the button's current HTML location?
+3. Check the downloadCard() function — specifically the line `clone.querySelector(".share-group").remove()` or equivalent. If the HTML restructure changed how .share-group is nested, this may return null and throw.
+4. Also verify that the button's ID or class hasn't changed during the restructure.
+
+Expected root cause: the selector/handler is stale. Fix by either:
+- Updating the selector to match the new DOM structure
+- Attaching the handler via a more robust selector (e.g., ID-based: `#download-card-btn`)
+- Re-reading the current class names and updating accordingly
+
+After the fix, confirm by clicking the button and verifying the PNG downloads correctly, and that the exported PNG still does NOT include the "Full Report" link or any elements from the .share-group.
+
+=== ISSUE 1 — Cover page has two stacked horizontal rules ===
+
+On page 1 of the PDF, between the caption "One request every 7 seconds of active AI use." and the "INSIDE THIS REPORT" label, there are TWO horizontal rules stacked close together. This is because .cover-hero has a border-bottom AND .toc has a border-top — both 1px solid ink.
+
+Remove one of them. Keep the .cover-hero border-bottom (it closes the hero section visually). Remove the .toc border-top.
+
+Result: only one horizontal rule between the hero zone and the TOC.
+
+=== ISSUE 2 — Relax letter-spacing on H1 and TOC titles ===
+
+The Fraunces display treatment is validated, but at -0.035em the letter-spacing is too tight — some glyph pairs visually pinch.
+
+Change letter-spacing in .h1 and .toc-title from -0.035em to -0.02em. Keep every other property unchanged (font-family, font-style, font-weight, opsz variation).
+
+=== ISSUE 3 — "Nothing leaves your device" should be centered on its row ===
+
+In the badge footer, the row containing "🇨🇭 Nothing leaves your device" currently has its content left-aligned. Change it to centered.
+
+CSS: on the row's wrapper (likely .foot .left or the row itself after the flex-column restructure), add `justify-content: center` if it's a flex container, or `text-align: center` if it's a block element containing the text span.
+
+The text should sit visually centered horizontally within the badge's content area.
+
+=== ISSUE 4 — Download card and Full Report stacked vertically + same size ===
+
+Currently "↓ Download card" and "Full Report" sit side-by-side on the same row inside .share-group.
+
+Change to:
+- Stacked vertically (one above the other)
+- Identical button dimensions (same width, same height, same padding)
+- Same outer size; only internal style differentiates primary vs secondary:
+  - Download card: current filled style (background ink, color bg)
+  - Full Report: outline style (1px ink border, transparent background, ink text)
+
+The width should be wide enough to contain both text strings comfortably without truncation — set to the width of the longest label plus padding, so both buttons match.
+
+The .share-group container stays on its row. Inside it, the two buttons stack vertically (maybe 6-8px gap between them), and the social icons (LinkedIn, X) stay to the right of the stack, vertically centered relative to the button stack.
+
+Layout approach:
+- .share-group: flex-row, align-items: center, justify-content: flex-end
+- Inside .share-group: a child wrapper (.share-buttons-stack) that's flex-column, containing the two buttons
+- After that wrapper: the social icons row
+
+Verify export still strips the entire .share-group from the PNG — including both buttons and social icons.
+
+=== VERIFICATION ===
+
+After all fixes:
+
+1. Click Download card on the badge — verify the PNG downloads and does NOT include the Full Report link or social icons.
+2. Badge footer visual: row 1 = "🇨🇭 Nothing leaves your device" centered; row 2 = stacked [Download card / Full Report] buttons on the right + social icons.
+3. PDF cover: single horizontal rule below the hero caption, no doubled line.
+4. H1 and TOC entries: readable spacing, no more pinched glyphs.
+5. Re-export the PDF and confirm all four visual fixes are in place.
+
+Do NOT commit yet. After I validate, we'll commit the entire phase 05.1 (including all polish iterations 05.1.5 through 05.1.8) as one commit.

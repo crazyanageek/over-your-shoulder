@@ -4,6 +4,7 @@
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>Over Your Shoulder — Daily Report</title>
+    <link rel="icon" type="image/png" href="../icons/icon48.png" />
     <link rel="stylesheet" href="fonts.css" />
     <link rel="stylesheet" href="styles.css" />
   </head>
@@ -78,25 +79,34 @@
       </section>
 
       <footer class="foot">
-        <div class="left">
-          <svg class="swiss-flag" viewBox="0 0 32 32" xmlns="http://www.w3.org/2000/svg" aria-label="Swiss flag">
-            <rect width="32" height="32" fill="#D52B1E" />
-            <path d="M13 6 h6 v7 h7 v6 h-7 v7 h-6 v-7 h-7 v-6 h7 z" fill="#FFFFFF" />
-          </svg>
-          <span>Nothing leaves your device</span>
+        <!-- Row 1: Swiss flag + tagline (left) · social icons (right) -->
+        <div class="foot-row foot-row-top">
+          <div class="left">
+            <svg class="swiss-flag" viewBox="0 0 32 32" xmlns="http://www.w3.org/2000/svg" aria-label="Swiss flag">
+              <rect width="32" height="32" fill="#D52B1E" />
+              <path d="M13 6 h6 v7 h7 v6 h-7 v7 h-6 v-7 h-7 v-6 h7 z" fill="#FFFFFF" />
+            </svg>
+            <span>Nothing leaves your device</span>
+          </div>
+          <div class="share-group share-icons-group">
+            <a id="share-linkedin" class="share-icon" href="#" target="_blank" rel="noopener noreferrer" title="Share on LinkedIn" aria-label="Share on LinkedIn">
+              <svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true">
+                <path d="M19 3a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2zM8.34 18.34V10.5H5.67v7.84zm-1.33-9a1.55 1.55 0 1 0 0-3.1 1.55 1.55 0 0 0 0 3.1zm11.33 9V14c0-2.47-1.32-3.62-3.08-3.62a2.66 2.66 0 0 0-2.42 1.33h-.03V10.5H10.2v7.84h2.67v-3.88c0-1.02.2-2.01 1.47-2.01s1.26 1.17 1.26 2.07v3.82z"/>
+              </svg>
+            </a>
+            <a id="share-x" class="share-icon" href="#" target="_blank" rel="noopener noreferrer" title="Share on X" aria-label="Share on X">
+              <svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true">
+                <path d="M18.244 2.25h3.308l-7.227 8.26 8.502 11.24H16.17l-5.214-6.817L4.99 21.75H1.68l7.73-8.835L1.254 2.25H8.08l4.713 6.231zm-1.161 17.52h1.833L7.084 4.126H5.117z"/>
+              </svg>
+            </a>
+          </div>
         </div>
-        <div class="share-group">
-          <button id="download-btn" class="share-btn primary" type="button">↓ Download card</button>
-          <a id="share-linkedin" class="share-icon" href="#" target="_blank" rel="noopener noreferrer" title="Share on LinkedIn" aria-label="Share on LinkedIn">
-            <svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true">
-              <path d="M19 3a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2zM8.34 18.34V10.5H5.67v7.84zm-1.33-9a1.55 1.55 0 1 0 0-3.1 1.55 1.55 0 0 0 0 3.1zm11.33 9V14c0-2.47-1.32-3.62-3.08-3.62a2.66 2.66 0 0 0-2.42 1.33h-.03V10.5H10.2v7.84h2.67v-3.88c0-1.02.2-2.01 1.47-2.01s1.26 1.17 1.26 2.07v3.82z"/>
-            </svg>
-          </a>
-          <a id="share-x" class="share-icon" href="#" target="_blank" rel="noopener noreferrer" title="Share on X" aria-label="Share on X">
-            <svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true">
-              <path d="M18.244 2.25h3.308l-7.227 8.26 8.502 11.24H16.17l-5.214-6.817L4.99 21.75H1.68l7.73-8.835L1.254 2.25H8.08l4.713 6.231zm-1.161 17.52h1.833L7.084 4.126H5.117z"/>
-            </svg>
-          </a>
+        <!-- Row 2: Download card · Full Report, side by side, same size -->
+        <div class="foot-row foot-row-bottom">
+          <div class="share-group share-buttons-group">
+            <button id="download-btn" class="share-btn primary" type="button">↓ Download card</button>
+            <a id="full-report-link" class="share-btn secondary" href="full.html" target="_blank" rel="noopener">Full Report</a>
+          </div>
         </div>
       </footer>
     </div>

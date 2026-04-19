@@ -1,0 +1,113 @@
+Phase 05.1.5 — Polish pass on the PDF scaffold before filling real content.
+
+Ten issues spotted during visual review. Address them in order.
+
+=== ISSUE 1 — PDF filename prefill ===
+
+When the user clicks "Save as PDF" in the print dialog, Chrome currently offers no suggested filename. Set document.title dynamically on page load to:
+
+  "Over Your Shoulder — Exposure Report — {date}"
+
+Where {date} is the current date formatted as "19 April 2026". Chrome uses document.title as the default filename suggestion. Implement in full.js at load time.
+
+=== ISSUE 2 — Cover: empty space under "REQUESTS YOUR BROWSER HAS SENT TO AI SERVERS" ===
+
+On page 1, the red alarm label "REQUESTS YOUR BROWSER HAS SENT TO AI SERVERS" currently has a blank band below it before the TOC starts. This blank band makes the label feel orphaned.
+
+Two options — pick whichever fits the layout better:
+
+A. Add an italic caption under the label: "{exposureTimeSummary}" — a short dynamic summary like "2,060 requests sent in 27 minutes of active use today." This connects the hero number to the narrative that follows. Placeholder for now: "2,060 requests sent in 27 minutes of active use today."
+
+B. Tighten the vertical spacing so the red label sits closer to the TOC above it, and the TOC starts higher on the page.
+
+My preference: A. Fill the empty space with meaningful content rather than removing the space. The caption bridges the hero number with the TOC.
+
+=== ISSUE 3 — Title font unreadable ===
+
+The H1 page titles currently use Fraunces in a configuration that renders poorly. Likely causes:
+- opsz axis set to 144 (display size) instead of 32-40 (text-title size)
+- Italic variant at 32pt sacrificing legibility
+
+Diagnose what's actually applied to .page h1 in full.css. Two fixes to try:
+
+A. Keep Fraunces but explicitly set font-variation-settings: "opsz" 36 for H1 titles. This uses the text-sized optical variant which is more readable.
+
+B. If A is not enough, switch H1 titles from Fraunces italic to Fraunces regular (non-italic) at 32pt. Keeps the serif character, gains legibility. Use italic ONLY for the page title decorative elements, not the H1 body.
+
+Test both approaches. Pick the one where a reader can read titles like "What was overlooked today" without squinting.
+
+The hero number on the cover (144pt) stays with opsz:144 — that's the only place where display opsz is appropriate.
+
+=== ISSUE 4 — Page numbers missing ===
+
+Add page numbers at the bottom of every page EXCEPT page 1 (the cover).
+
+Style: JetBrains Mono, 9pt, ink-soft color. Format: "02 / 08", "03 / 08", etc. Positioned bottom-right of the page, 14mm from bottom edge, 16mm from right edge (aligned with the main content right edge).
+
+Implementation: a <div class="page-number"> inside each .page except the cover, or position via ::after pseudo-element using CSS counters.
+
+=== ISSUE 5 — Page 4 (Understanding the score) overflows ===
+
+The fourth section "Continuity" is cut off at the bottom of the page. Real content will make this worse.
+
+Fix strategy:
+1. Allow the page to break naturally if content exceeds A4. Insert `<div class="page-break"></div>` or use `page-break-before: auto` on the section that overflows.
+2. If the overflow becomes a dedicated continuation page, it does NOT count as a new numbered page of the report. Keep the page-number display as "04 / 08" on both the overflow sections.
+
+Simpler approach: ensure the H1 + intro + 4 sections + closing fit on ONE page by reducing internal spacing (margin-top on sections, line-height on explanations) until it all fits. Real content is ~500 words for this page, which should fit on A4 with 11pt body text and 18mm margins if spacing is tight.
+
+Do both: tighten spacing first. If real content in 05.2 still overflows, we'll add controlled page breaks then.
+
+=== ISSUE 6 — Page 5 (What this report sees) overflows ===
+
+Same issue as Page 4. Same fix: tighten spacing on the 4 sections + 2 tables + texts so it fits one A4 page.
+
+=== ISSUE 7 — Symbiont link styling on page 8 ===
+
+The word "Symbiont" in the closing note is currently styled as a conventional blue underlined link. This breaks with the rest of the document, where external links are styled ink color + thin underline.
+
+Apply the same style as other external links in the report:
+- color: var(--ink)
+- text-decoration: underline
+- text-decoration-thickness: 1px
+- text-underline-offset: 3px
+- no blue color, no bold
+
+Same rule applies to the "My Insights" link in the footer.
+
+=== ISSUE 8 — Footer text: remove "Lausanne" ===
+
+In page 8 footer, change:
+  "© {year} My Insights · Lausanne, Switzerland"
+
+To:
+  "© {year} My Insights · Switzerland"
+
+Remove the city name. Keep the country only.
+
+=== ISSUE 9 — Page 2 validated ===
+
+No change needed. Just confirming it passed review.
+
+=== ISSUE 10 — Page 3 2x2 grid validated ===
+
+No change needed. Layout approved.
+
+=== OVERALL VERIFICATION ===
+
+After all fixes, re-export the PDF and verify:
+1. Filename is pre-filled in Chrome's save dialog
+2. Cover page has no orphaned red label
+3. H1 titles are legible at 32pt
+4. Pages 2-8 have page numbers bottom-right
+5. Pages 4 and 5 fit on one A4 page without overflow
+6. The Symbiont link on page 8 is ink-colored with thin underline, not blue
+7. Footer reads "Switzerland" only
+
+Tell me:
+- Whether filename prefill works in your version of Chrome
+- The H1 font rendering before and after the fix (A or B worked?)
+- Whether pages 4 and 5 still overflow with placeholder content (we'll address with real content in 05.2 if so)
+- Any other visual regression introduced by these changes
+
+Do NOT commit yet. I'll validate the re-exported PDF before committing the whole 05.1 + 05.1.5 work as one commit.

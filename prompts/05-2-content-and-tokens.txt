@@ -1,0 +1,206 @@
+Phase 05.2 — Integrate real editorial content and wire up dynamic tokens.
+
+This phase replaces ALL placeholder text (Lorem ipsum + placeholder values like "2,060 placeholder") in /report/full.html with:
+1. The real editorial content from prompts/phase-05-editorial.md
+2. Dynamic tokens wired to chrome.storage.local data
+3. Conditional logic for multi-variant sections
+
+=== REFERENCE ===
+
+Read prompts/phase-05-editorial.md at the project root for all editorial text, token names, and conditional variants. Do not paraphrase — copy the exact editorial text verbatim. The document is the source of truth.
+
+=== SCOPE ===
+
+IN SCOPE for this phase:
+- All editorial text (intro paragraphs, section bodies, legends, micro-lists labels, footer text, etc.)
+- All tokens in "Already computed" and "Simple new computations" lists (detailed below)
+- All conditional variants (geography, continuity, vendor, hourly, score, China, mode léger)
+- PDF filename dynamic date (not hardcoded)
+
+OUT OF SCOPE (deferred to 05.3):
+- Tokens requiring oys_score_history (new storage) — display raw {minScore}, {maxScore}, {avgScore}, {minScoreDate}, {maxScoreDate}, {trendLabel}, {todayVsAvg}
+- Tokens requiring distance calculations — display raw {timezoneCount}, {farthestCity}, {distanceKm}, {totalDistanceKm}
+- Template engines for {cityBreakdown} and {countrySummary} — display raw tokens
+- Token {continuityTrend} — display raw token
+
+All deferred tokens stay visible in the PDF as their literal form (e.g., "{minScore}") so nothing is hidden or forgotten.
+
+OUT OF SCOPE (deferred to 05.4):
+- Chart implementations (vendors bar, hourly histogram, score curve, enriched map) — keep the grey placeholder rectangles exactly as they are in 05.1
+
+=== TOKENS TO WIRE NOW (CATEGORY 1 + 2) ===
+
+Category 1 — Directly from existing storage or functions:
+
+Basic counters (chrome.storage.local.oys_counters):
+- {totalRequestsToday} → counters.total (currently counts all, not just today; leave as-is for now, rename semantic is fine)
+- {totalRequests} → same
+- {topCountry} → top key in counters.byCountry by value
+- {topCountryShare} → rounded % of top country
+- {crossBorderShare} → same as percentCrossingBorders
+- {percentCrossingBorders} → count of requests whose destination country ≠ userCountry, divided by total
+- {percentToChina} → count of requests to country "CN" / total, as %
+- {topDestinationShare} → count of requests to country "US" / total, as % (for CLOUD Act section)
+- {cityCount} → number of distinct cities in counters.byHost (resolve via HOST_GEO table in report.js)
+- {countryCount} → number of distinct keys in counters.byCountry
+- {foreignCountryCount} → countryCount minus (1 if userCountry is in byCountry, else 0)
+- {userCountry} → from detectUserCountry() (country code)
+- {countryName} → full name from COUNTRY_NAME map for userCountry
+
+Vendor metrics:
+- {vendorCount} → number of distinct keys in counters.byVendor
+- {topVendorName} → top key in byVendor
+- {topVendorShare} → rounded % of top vendor
+- {secondVendorName} → second key in byVendor (null if only 1 vendor)
+- {secondVendorShare} → rounded % of second vendor (0 if none)
+- {topToSecondRatio} → topVendorShare / secondVendorShare, rounded to 1 decimal ("4.2x"). If only 1 vendor: "∞" or "N/A — single vendor"
+- {vendorName} → topVendorName (used in mono-vendor legend)
+- {vendorList} → prose list per editorial: 1 vendor = "ChatGPT"; 2 = "ChatGPT and Claude"; 3+ = "ChatGPT, Claude, and Perplexity" (Oxford comma)
+
+Score metrics (from computeScore):
+- {todayScore} → result.score
+- {volumeScore} → breakdown.volume
+- {categoriesScore} → breakdown.categories
+- {geographyScore} → breakdown.geography
+- {continuityScore} → breakdown.continuity
+- {avgDailyRequests} → counters.total / daysObserved, rounded
+
+Category-related:
+- {categoriesCount} → number of distinct sensitive categories touched (look up how current score logic determines this)
+- {categoriesList} → English grammar list of category names matching the count
+
+Time metrics (from computeExposureStats):
+- {minutesActive} → stats.totalMinutes
+- {secondsPerRequest} → stats.secondsPerRequest
+
+Observation period:
+- {daysObserved} → countDaysActive(all) — same function already in use
+
+Date tokens:
+- {date} → current date formatted "19 April 2026"
+- {time} → current time formatted "3:45 PM"
+- {year} → current 4-digit year
+
+Category 2 — Simple new calculations (implement in full.js):
+
+Hourly distribution (requires iterating events by hour-of-day):
+- {peakHour} → the hour (0-23) with the most events, formatted as "3 PM" or "9 AM"
+- {peakHourRequests} → number of events in that hour
+- {idleHours} → number of hours (0-23) with zero events
+- {firstActivityTime} → time of first event today, formatted "8:47 AM"
+- {lastActivityTime} → time of last event today, formatted "6:12 PM"
+- {dayNightRatio} → ratio of events between 07:00–23:00 vs 23:00–07:00, formatted as "4.2x" or "all daytime" if zero nighttime
+
+For the concentrated-activity variant (< 6h of active hours):
+- {startHour} → first hour of the day with events
+- {endHour} → last hour of the day with events
+
+Volume percentile (approximation without historical data):
+- {volumePercentile} → percentage of observed days whose request count was LOWER than today's. With 1 day observed, this is "100%" or "N/A". With 7 days, compute from stored per-day totals.
+
+=== CONDITIONAL LOGIC ===
+
+PAGE 2 — countrySummary:
+Leave raw token {countrySummary} for now. Deferred to 05.3.
+
+PAGE 2 — cityBreakdown:
+Leave raw token {cityBreakdown} for now. Deferred to 05.3.
+
+PAGE 3 — Mode selection:
+Compute at render time:
+  const fullMode = daysObserved >= 3 && totalRequests >= 500;
+
+If fullMode is false → render ONLY block 1 (vendors) and block 4 (map). Replace blocks 2 and 3 with the pedagogical note from the editorial. Expand blocks 1 and 4 to fill the space (larger height).
+
+If fullMode is true → render all 4 blocks in the 2x2 grid as currently scaffolded.
+
+PAGE 3 BLOCK 1 — Vendor legend:
+If vendorCount === 1 → mono-vendor legend from editorial
+If vendorCount >= 2 → multi-vendor legend
+
+PAGE 3 BLOCK 2 — Hourly legend:
+Count active hours (hours with ≥1 event). If activeHoursCount < 6 → concentrated-activity legend. Else → standard legend.
+
+PAGE 3 BLOCK 3 — Score legend:
+Compute scoreVariation = maxScore - minScore. If scoreVariation < 5 → stable legend. Else → standard legend.
+BUT: both variants use tokens that are deferred to 05.3 (minScore, maxScore, avgScore). So for now, render the STANDARD legend template with raw tokens visible.
+
+PAGE 4 — Geography section (3 variants):
+- Variant A (multi-country cross-border): percentCrossingBorders > 0 AND countryCount >= 2
+- Variant B (100% domestic): userCountry === topCountry AND countryCount === 1
+- Variant C (100% foreign, single country): topCountry !== userCountry AND countryCount === 1
+
+If none of the above perfectly matches (edge case like userCountry = OTHER), default to Variant A.
+
+PAGE 4 — Continuity section (2 variants):
+- Standard variant: daysObserved >= 1
+- First-day variant: daysObserved === 1
+
+Wait — "first-day" is when it's literally the first day. The standard variant includes days 2-7 and beyond. So:
+- If daysObserved === 1 → first-day variant
+- Else → standard variant
+
+PAGE 6 BLOCK 4 — China (2 variants):
+- Variant A: percentToChina > 0
+- Variant B: percentToChina === 0
+
+=== PDF FILENAME DYNAMIC DATE ===
+
+Currently full.js sets document.title at load. Make sure the date part uses the CURRENT date at the moment of page load, not a hardcoded string. Example:
+
+  const today = new Date();
+  const formatted = today.toLocaleDateString('en-GB', {
+    day: 'numeric',
+    month: 'long',
+    year: 'numeric'
+  });
+  document.title = `Over Your Shoulder — Exposure Report — ${formatted}`;
+
+So the filename suggestion in Chrome's save dialog auto-adjusts to the real date.
+
+=== IMPLEMENTATION STRUCTURE ===
+
+Recommended approach for full.js:
+
+1. At page load, fetch chrome.storage.local.get(null)
+2. Compute all tokens (Category 1 + 2) into a single tokens object
+3. Walk the DOM and replace all text containing {tokenName} with the corresponding value
+4. Walk the DOM and handle conditional blocks (each conditional block has data-variant-if="..." attributes that JS evaluates)
+5. Update page-number elements if any dynamic
+6. Set document.title with the current date
+
+For the conditional variants in the HTML, a clean pattern is:
+
+  <div data-variant-group="geography-section">
+    <div data-variant-if="multiCountry">...variant A text...</div>
+    <div data-variant-if="allDomestic">...variant B text...</div>
+    <div data-variant-if="allForeign">...variant C text...</div>
+  </div>
+
+JS evaluates the condition once, removes the non-matching siblings, keeps the matching one.
+
+=== VERIFICATION ===
+
+After implementation:
+1. Open /report/full.html via chrome-extension:// (not file://) — remember the CORS issue
+2. Scroll through the 8 pages
+3. Confirm NO Lorem ipsum text remains anywhere
+4. Confirm all real editorial text from phase-05-editorial.md is present
+5. Confirm the ~40 tokens in Category 1+2 are replaced with actual values (numbers, country names, etc.)
+6. Confirm the ~15 tokens in Category 3 (deferred) are STILL visible as raw {tokenName} literals
+7. Confirm the conditional variants match your current data:
+   - Geography section → should show Variant C if you're in CH with 100% US traffic, Variant A with multi-country traffic, etc.
+   - Continuity section → first-day or standard
+   - Vendor legend → mono or multi
+   - Page 3 mode → light if < 3 days or < 500 requests; full otherwise
+   - China block → with percentToChina value or "0% / did not reach" variant
+8. Click "Print or save as PDF" — filename should be "Over Your Shoulder — Exposure Report — [today's date].pdf"
+9. Open the exported PDF and verify the 8 pages render correctly
+
+Tell me:
+- Which variant was selected for each conditional (geography, continuity, vendor legend, page 3 mode, China)
+- The list of any tokens still showing as {tokenName} (these should match the Category 3 deferred list)
+- Any editorial text that doesn't fit its container (overflow requires tuning in next phase)
+- The PDF filename in your save dialog
+
+Do NOT commit yet. I'll review before commit.

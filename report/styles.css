@@ -514,22 +514,40 @@ body {
   line-height: 1.35;
 }
 
-/* ================= FOOTER ================= */
+/* ================= FOOTER =================
+   Option A two-row layout:
+   Row 1 — [🇨🇭 Nothing leaves your device] ····························· [LinkedIn] [X]
+   Row 2 — [↓ Download card]                                  [Full Report]
+   Both buttons in row 2 are equal width, side by side, centered together.
+   Both .share-group variants are stripped from the exported PNG by
+   downloadCard() via `.share-group` selector. */
+
 .foot {
   padding: 0.75rem 1rem;
   display: flex;
-  justify-content: space-between;
-  align-items: center;
-  gap: 0.75rem;
+  flex-direction: column;
+  row-gap: 0.5rem;
   font-family: var(--font-mono);
   font-size: 10.5px;
   color: var(--ink-muted);
   letter-spacing: 0.06em;
 }
+
+/* Both rows share the same row layout: full width, space-between children. */
+.foot-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.75rem;
+  width: 100%;
+}
+
+/* ——— Row 1: flag + tagline (left) · social icons (right) ——— */
 .foot .left {
   display: flex;
   align-items: center;
   gap: 0.55rem;
+  /* Left-aligned inside the row */
 }
 .foot .swiss-flag {
   width: 13px;
@@ -537,50 +555,20 @@ body {
   flex-shrink: 0;
   display: inline-block;
 }
-.foot {
-  flex-wrap: wrap;
-  row-gap: 0.5rem;
-}
-.share-group {
+
+.share-icons-group {
   display: flex;
   align-items: center;
-  gap: 0.75rem;
-  flex-wrap: wrap;
+  gap: 0.4rem;
+  flex-shrink: 0;
 }
-.share-btn {
-  font-family: var(--font-display);
-  font-variation-settings: "opsz" 48;
-  font-style: italic;
-  font-size: 0.9rem;
-  letter-spacing: 0;
-  text-transform: none;
-  text-decoration: none;
-  white-space: nowrap;
-  cursor: pointer;
-  margin: 0;
-}
-button.share-btn {
-  border: none;
-  border-radius: 2px;
-  padding: 0;
-}
-.share-btn.primary {
-  background: var(--ink);
-  color: var(--bg);
-  padding: 0.4rem 0.8rem;
-  letter-spacing: 0.05em;
-  text-transform: uppercase;
-  font-weight: 500;
-  font-size: 0.82rem;
-  font-style: italic;
-}
-.share-btn.primary:hover { background: #1f1f1e; }
+
 .share-icon {
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  width: 32px;
-  height: 32px;
+  width: 28px;
+  height: 28px;
   color: var(--ink);
   background: transparent;
   border: none;
@@ -591,3 +579,59 @@ button.share-btn {
 }
 .share-icon:hover { background: var(--rule-soft); }
 .share-icon svg { display: block; }
+
+/* ——— Row 2: Download card + Full Report, side by side, equal width ——— */
+.share-buttons-group {
+  display: flex;
+  flex-direction: row;
+  align-items: stretch;
+  gap: 0.5rem;
+  width: 100%;
+  justify-content: center;
+}
+
+.share-btn {
+  font-family: var(--font-display);
+  font-style: italic;
+  text-decoration: none;
+  white-space: nowrap;
+  cursor: pointer;
+  margin: 0;
+}
+
+/* Download card (primary) and Full Report (secondary) render at identical
+   outer dimensions. Shared sizing lives here; only the fill/border swap
+   distinguishes them. flex: 1 makes them share the row width equally. */
+.share-btn.primary,
+.share-btn.secondary {
+  flex: 1 1 0;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0.45rem 0.8rem;
+  font-size: 0.82rem;
+  font-weight: 500;
+  font-style: italic;
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+  border-radius: 2px;
+  border: 1px solid var(--ink);
+  text-decoration: none;
+}
+.share-btn.primary {
+  background: var(--ink);
+  color: var(--bg);
+}
+.share-btn.primary:hover { background: #1f1f1e; }
+.share-btn.primary:disabled {
+  opacity: 0.6;
+  cursor: wait;
+}
+.share-btn.secondary {
+  background: transparent;
+  color: var(--ink);
+}
+.share-btn.secondary:hover {
+  background: var(--ink);
+  color: var(--bg);
+}
