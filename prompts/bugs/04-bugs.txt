@@ -1,0 +1,28 @@
+Stop. Multiple issues observed after the 04.5.1 work — all likely symptoms of one root cause: the bundled local fonts are not actually loading. Evidence:
+
+1. The "jolie police" (Fraunces) is gone from the report — the italic serif no longer renders, layout has shifted, text that used to sit in columns is now spilling below the line
+2. Download PNG still fails with the IDENTICAL SecurityError: "Tainted canvases may not be exported." This is the error that was supposed to be fixed by bundling fonts locally. If it persists, fonts aren't local.
+3. X share URL also failing again per user report (was fixed, now not?)
+4. Pause symbol ‖ now appears centered, but the user wanted it right-aligned with the Resume button — layout regression from the popup CSS refactor
+
+Diagnose BEFORE fixing anything else. Specifically:
+
+A. Open the report in Chrome, DevTools → Network tab, reload. Tell me:
+   - Is fonts.css loading? (200 OK?)
+   - Are the .woff2 files loading from /report/fonts/? (all 10 of them?)
+   - Are there any 404s on font files?
+   - Any request still going to fonts.googleapis.com or fonts.gstatic.com?
+
+B. DevTools → Computed styles on the hero number (.hero-number element):
+   - What is the actual computed font-family? Is it "Fraunces" or a fallback?
+   - If fallback, why? (Check console for "Failed to decode downloaded font" or similar.)
+
+C. Open /report/fonts.css directly (file:// or via chrome-extension://) and paste the first 20 lines here. I want to see the @font-face declarations and the src: url(...) paths.
+
+D. Confirm which files actually exist in /report/fonts/ (ls the directory, paste the listing).
+
+E. In /report/index.html, paste the <head> section — I want to see what's actually being <link>ed.
+
+Do NOT attempt fixes yet. Just run the diagnosis and report findings. The goal is to understand why the font bundle didn't take effect so we fix it once, correctly, rather than patching symptoms.
+
+Also revert nothing yet — keep current state so we can inspect.

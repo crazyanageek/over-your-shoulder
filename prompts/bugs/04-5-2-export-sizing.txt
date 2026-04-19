@@ -1,0 +1,28 @@
+Bug follow-up: the PNG export looks degraded compared to the on-screen rendering. The hero red number is smaller and appears right-floated instead of dominating. The whole layout feels "looser" and less condensed in the PNG than it does on screen.
+
+Root cause: many internal font-sizes and spacings use clamp() with vw units, which resolve against the browser VIEWPORT rather than the badge's intrinsic 600px container. When the badge is cloned at 600×750 for the PNG rasterization, those clamp() values produce different results than expected because they still reference the viewport at the moment of cloning.
+
+Fix: make the badge's internal typography and sizing FULLY INDEPENDENT of the viewport. Replace all clamp(x, Nvw, y) and any other vw-based values inside .badge with fixed rem or px values tuned for the 600px intrinsic width.
+
+Specific replacements in /report/styles.css (audit ALL occurrences of vw and clamp inside the .badge):
+
+.hero-number:
+  BEFORE: font-size: clamp(4.5rem, 15vw, 8rem);
+  AFTER:  font-size: 7.5rem;
+
+.hero-title:
+  BEFORE: font-size: clamp(1.8rem, 5.5vw, 2.5rem);
+  AFTER:  font-size: 2.3rem;
+
+Any other clamp()/vw values in map-band, score-band, stats, masthead, footer, etc. — convert to fixed values visually equivalent to what the design shows at 600px viewport.
+
+Keep the fitHeroNumber() JS script active — it still shrinks the hero number if it overflows the .hero-number-wrap container (e.g. for "1,200,456" cases). But the CSS base value should now be a fixed 7.5rem, not viewport-dependent.
+
+After applying, verify:
+1. On-screen rendering at 1400px viewport looks identical to 800px viewport (they should — the badge is fixed 600px and scaled via transform)
+2. PNG export at 1200×1500 shows the hero number at its full intended size, filling its column, not right-floating small
+3. All typography proportions match the v11 reference mockup
+
+If in doubt about a specific clamp()/vw replacement, use the value you observed working at ~800px browser width in prior phases — that was the sweet spot.
+
+Do NOT commit yet. Test visually first (both on-screen and PNG export), then report back. The bar is: "the PNG looks as good as the screen".

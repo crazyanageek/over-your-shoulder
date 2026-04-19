@@ -1,0 +1,28 @@
+Great diagnosis — the hard-reload worked, fonts.css and all 10 woff2 load correctly, zero Google Fonts references. Screenshot confirms this.
+
+BUT three problems remain:
+
+Problem 1 (critical bug): The hero number shows "2023" and the map headline says "Your data crossed the Atlantic 2023 times today". That's the CURRENT YEAR being treated as a request count. There is a data bug somewhere — likely a token substitution error where the dateline's year leaked into the requests count, or the counters.total is actually reading a year value. Please investigate urgently. This is a data integrity issue that makes the entire report wrong.
+
+Problem 2 (design regression): Fraunces is loading but visually it's NOT the same as the v11 reference. In v11 we had "font-variation-settings: 'opsz' 144" for display typography — that needs the VARIABLE version of Fraunces. You bundled static WOFF2 files, so the opsz axis has no effect. The hero number looks less "display" than the original. Swap the static Fraunces WOFF2 for the variable Fraunces WOFF2 file. One single file per style (normal + italic) instead of separate weights. Source: https://fonts.gstatic.com/s/fraunces/v36/ (get the variable woff2). Update fonts.css to use font-weight: 100 900 (range) on @font-face with the variable files.
+
+Problem 3 (tainted canvas persists): Despite the fonts being local, Download still fails with "Tainted canvas". Something ELSE in the rendered DOM is referencing an external origin. Debug procedure:
+
+A. In /report/styles.css, search for any url(...) that references an external domain (fonts.googleapis.com, fonts.gstatic.com, cdn.jsdelivr.net, unpkg.com, etc.). Paste me everything that looks external.
+
+B. In /report/index.html, search for any <img>, <link>, or inline style with src or url pointing to an external domain. Paste hits.
+
+C. In the D3 map rendering code (report.js world map section), check if any SVG element gets assigned a stroke or fill that references an external pattern/gradient/image.
+
+D. In the downloadCard() function, just before toBlob() is called, log the ENTIRE serialized SVG string:
+   console.log('Serialized SVG length:', svgString.length);
+   console.log('First 500 chars:', svgString.substring(0, 500));
+   console.log('Contains fonts.googleapis:', svgString.includes('fonts.googleapis'));
+   console.log('Contains fonts.gstatic:', svgString.includes('fonts.gstatic'));
+   console.log('Contains http:', svgString.match(/https?:\/\/[^\s"']+/g));
+
+Run the log, click Download, paste the console output here. We'll find the offender and remove it.
+
+Problem 4 (pause): The user confirmed option C — REMOVE the big centered ‖ symbol entirely. Keep all other pause signals (toolbar badge, red top stripe, "PAUSED · NO DATA IS BEING RECORDED" label, Resume button in red, greyed number, dimmed score ring). Delete the ‖ element from popup.html/popup.css cleanly.
+
+Do the debug first for problems 1 and 3. Then apply the fixes for problems 2 and 4. Do NOT commit yet.

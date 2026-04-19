@@ -1,0 +1,30 @@
+All 4 previous fixes validated:
+- Download PNG now works (data: URL swap was correct)
+- The "2023" was actual storage value, no data bug
+- Fraunces variable renders correctly (opsz axis now active)
+- Pause layout cleaned up (big ‖ removed)
+
+Now fix the remaining bug #5 (responsive broken):
+
+When the user resizes the browser window, the layout reflows incorrectly and some texts disappear or overlap. The report card should be a FIXED 4:5 portrait object at max-width 600px, centered in the viewport. It was never intended to be responsive in the flexible sense — it's a poster, not a dashboard.
+
+Specifically:
+- The .badge container should have max-width: 600px, aspect-ratio: 4/5, and should NOT shrink internally below a reasonable minimum
+- Text elements must NEVER disappear on resize
+- The hero number fit-to-width script is fine (that part works), but other elements (hero-sub italic line, composition bar, map headline, destinations list) should remain fully visible at all widths
+
+Preferred fix: Lock the badge at 600px width with proportional scaling via CSS transform: scale() based on viewport. The entire card shrinks as one unit on mobile, preserving ALL internal proportions — like a poster being photographed smaller, not reformatted.
+
+Implementation sketch:
+1. Wrap .badge in a container .badge-stage that handles the scaling
+2. .badge stays at fixed 600×750px (or whatever your current fixed dimensions are)
+3. On resize, compute scale = min(1, viewportWidth / 632) where 632 = 600 + margin
+4. Apply transform: scale(scale) to .badge and adjust .badge-stage height so no scroll
+
+Alternative simpler approach: CSS-only, using min-width: 600px on .badge and overflow-x: auto on the body. Less elegant on tiny viewports but preserves integrity perfectly.
+
+Choose whichever is cleaner. Goal: the report looks IDENTICAL on 400px-wide mobile and 1200px-wide desktop — just smaller/bigger as one unit, no reflow, no disappearing text.
+
+Same for the popup: it has a fixed 320×400 (or similar) size by Chrome extension convention, so it doesn't need responsive — but verify it doesn't break at viewport sizes it's never supposed to encounter.
+
+Apply this single fix. Do NOT commit yet. Test on disk, then I'll validate.

@@ -1,0 +1,148 @@
+Phase 04.5.1 — polish pass. Multiple fixes. Do NOT commit until user validates.
+
+=== 1. Replace the icon set with OYS.png (user-provided) ===
+
+Source file: /icons/OYS.png (1024×1024, RGB, white background, black "OYS" calligraphy monogram).
+
+Steps:
+1. Make the white background transparent. Use Python + PIL:
+   from PIL import Image
+   img = Image.open('icons/OYS.png').convert('RGBA')
+   data = img.getdata()
+   new = [(255,255,255,0) if (p[0]>240 and p[1]>240 and p[2]>240) else p for p in data]
+   img.putdata(new)
+   img.save('icons/OYS_transparent.png')
+2. Generate three PNGs from the transparent version:
+   - icons/icon16.png (16×16, LANCZOS resample)
+   - icons/icon48.png (48×48, LANCZOS resample)
+   - icons/icon128.png (128×128, LANCZOS resample)
+3. Delete the old eye-mark icons (icons/icon16.png, icons/icon48.png, icons/icon128.png get overwritten).
+4. Verify sizes with PIL after generation. Confirm file sizes are reasonable (typically <5KB for 16px, <20KB for 128px).
+5. Keep icons/OYS.png as-is (source), keep OYS_transparent.png as an intermediate artifact, or delete it after generating the three sizes — your call.
+
+Manifest.json paths stay the same (icon16.png, icon48.png, icon128.png in /icons/).
+
+=== 2. Popup headline "Who is" single line ===
+
+Adjust popup CSS so "Who is" never wraps to two lines. Either:
+- Slightly widen the popup if the current width clips it
+- Or reduce the font-size of "Who is" by ~5-10%
+Keep the existing visual hierarchy: italic gray "Who is" on line 1, bold black "looking over your shoulder?" on line 2 (which can still wrap if needed).
+
+=== 3. Cumulative line larger ===
+
+Bump .pop-cumulative from 11px to 13px. Keep mono font and ink-muted color. No other changes.
+
+=== 4. Replace "&" with "and" ===
+
+In /report/data/punchlines.json, scan ALL string values across ALL pools (masthead, heroSub, mapHeadline.usDominant, mapHeadline.neutral, verdict.*.lines). Replace every " & " with " and ". Known occurrence: "Moderate & climbing" → "Moderate and climbing".
+
+Be conservative: don't touch schema keys or non-string values.
+
+=== 5. Pause symbol repositioning + doubling ===
+
+Currently the "‖" pause symbol appears above the popup (floating outside the content area). Move it INSIDE the popup, directly below the existing "PAUSED · NO DATA IS BEING RECORDED" red line. Double its font-size compared to the current size. Keep alarm-red color, center horizontally, add ~6px margin below.
+
+=== 6. "Resume" button label in red when paused ===
+
+When oys_active === false, the Pause/Resume button label reads "Resume" in alarm-red text. Button background stays neutral (same as active state — no red bg). Only the text color changes. This signals "click me to restart recording" more strongly.
+
+=== 7. Remove residual "today" language in cumulative context ===
+
+Search /report/index.html and /report/report.js for any remaining string containing "today" that refers to a cumulative metric. Specifically:
+- Hero caption: previously "Requests your browser sent to AI servers today" — if any variant of this still appears, change to "Requests your browser has sent to AI servers"
+- Any fallback copy in report.js that still uses "today" in a cumulative context
+
+Do NOT touch:
+- popup.html / popup.js (popup's "REQUESTS TODAY" is correct — it really is today)
+- mapHeadline templates in punchlines.json that legitimately reference "today" (users can edit those later; don't overreach)
+
+=== 8. Fix X (Twitter) share URL — it returns "page does not exist" ===
+
+Debug first, then fix:
+1. Add console.log('X share URL:', finalUrl) before window.open in the X button handler
+2. Tell me what the URL looks like when I click it
+3. Most likely cause: total URL length > 280 chars, or an unescaped character in the punchline
+
+Fix: simplify the text parameter to just the punchline (no trailing phrase "— see what your browser is saying without you:"). Let X pull og-tags from overyourshoulder.ch when the landing exists.
+
+New format:
+  const text = encodeURIComponent(currentPunchline);
+  const url = encodeURIComponent('https://overyourshoulder.ch');
+  const shareUrl = `https://twitter.com/intent/tweet?text=${text}&url=${url}`;
+
+Report the URL to me after fix.
+
+=== 9. Fix Download PNG — "Tainted canvas" error ===
+
+Confirmed error: "SecurityError: Failed to execute 'toBlob' on 'HTMLCanvasElement': Tainted canvases may not be exported."
+
+Root cause: Google Fonts loaded from fonts.googleapis.com/fonts.gstatic.com taint the canvas when the SVG embeds them in a foreignObject, so toBlob() refuses to export.
+
+Solution: BUNDLE THE FONTS LOCALLY. The user explicitly chose this option for a "whaou" PNG output with perfect typography.
+
+Implementation:
+1. Create /report/fonts/ directory
+2. Download the four font files we actually use. Only WOFF2 (modern browsers including Chrome MV3). Use curl from https://fonts.googleapis.com/css2?family=... with a standard User-Agent header to get the WOFF2 URLs, then curl those files.
+   Fonts needed:
+   - Fraunces (regular 400, medium 500, italic 400, italic 500) → 4 WOFF2 files
+   - Inter (400, 500, 600, 700) → 4 WOFF2 files
+   - JetBrains Mono (400, 500) → 2 WOFF2 files
+   Total ~400 KB bundled.
+3. Write /report/fonts.css that @font-face declares each file from the local path.
+4. Update /report/index.html: REPLACE the Google Fonts <link> tags with <link rel="stylesheet" href="fonts.css" />. No more fonts.googleapis.com or fonts.gstatic.com references.
+5. Same for popup/popup.html.
+6. Update manifest.json CSP: remove the fonts.googleapis.com and fonts.gstatic.com entries from style-src and font-src (they're no longer needed).
+7. Rebuild the download function: it can now use the original foreignObject+canvas approach because the fonts are same-origin. No taint.
+
+After implementation, test:
+- Load the report → fonts render correctly on-screen (same as before)
+- Click Download → PNG file lands in Downloads folder, fonts rendered correctly in the PNG
+- Console shows no network request to fonts.googleapis.com / fonts.gstatic.com
+- Open the downloaded PNG and confirm Fraunces/Inter are rendered properly (not fallback Georgia/system-ui)
+
+=== 10. Compact share buttons — icons only ===
+
+Replace the current text labels "Share on LinkedIn ↗" and "Share on X ↗" with icon-only buttons.
+
+LinkedIn SVG:
+  <svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor">
+    <path d="M19 3a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2zM8.34 18.34V10.5H5.67v7.84zm-1.33-9a1.55 1.55 0 1 0 0-3.1 1.55 1.55 0 0 0 0 3.1zm11.33 9V14c0-2.47-1.32-3.62-3.08-3.62a2.66 2.66 0 0 0-2.42 1.33h-.03V10.5H10.2v7.84h2.67v-3.88c0-1.02.2-2.01 1.47-2.01s1.26 1.17 1.26 2.07v3.82z"/>
+  </svg>
+
+X (Twitter) SVG:
+  <svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor">
+    <path d="M18.244 2.25h3.308l-7.227 8.26 8.502 11.24H16.17l-5.214-6.817L4.99 21.75H1.68l7.73-8.835L1.254 2.25H8.08l4.713 6.231zm-1.161 17.52h1.833L7.084 4.126H5.117z"/>
+  </svg>
+
+Style:
+- 32×32px click target, 20×20 icon inside, centered
+- Flat, no border, no background by default
+- Hover: opacity 0.6 OR background var(--rule-soft) — pick cleaner
+- color: var(--ink)
+- title="Share on LinkedIn" / title="Share on X" for tooltips
+
+Place right of the "↓ Download card" button, in that order. Everything on one line in the footer.
+
+=== After implementation ===
+
+Report to me:
+1. Icon generation result: sizes of icon16/48/128, confirmation transparency worked
+2. Console error you observed for Download BEFORE bundling fonts (to document the problem)
+3. Final X share URL example (paste it)
+4. Walkthrough of the paused popup top-to-bottom
+5. Any side effects or regressions noticed
+
+=== Commit plan ===
+
+Do NOT commit automatically. Wait for user's explicit "validated, commit and push". Then TWO commits:
+
+Commit 1 (icons):
+  git add icons/
+  git commit -m "chore: replace icon with OYS monogram (user-provided, transparent)"
+
+Commit 2 (everything else):
+  git add popup/ report/ manifest.json
+  git commit -m "fix: local fonts bundle, icon share buttons, pause UX, resume in red, X URL"
+
+Then: git push

@@ -1,0 +1,22 @@
+Three small polish items after the export-sizing fix. All three are layout regressions, not logic bugs.
+
+PROBLEM 1: Hero number right-floats in PNG export.
+In the PNG, the big red number sticks to the right edge while in the on-screen view it sits nicely in its column with some right breathing room. The .hero-number-wrap has max-width: 320px but in the 600px intrinsic export, the math differs.
+
+Fix: give .hero-number-wrap a right padding so the number doesn't kiss the column edge.
+  .hero-number-wrap { max-width: 320px; padding-right: 0.5rem; }
+Adjust max-width downward if the number is still overflowing its intended box.
+
+Also verify the .hero-top grid's column-gap is enough to separate title from number column. The current column-gap: 0.75rem might need to go up to 1rem on the 600px intrinsic.
+
+PROBLEM 2: Footer text wraps to 2 lines on screen.
+Currently the footer shows "Built in Switzerland · Nothing leaves your device" plus the Swiss flag SVG plus the Download button plus LinkedIn/X icons. This overflows on a 600px-wide badge and wraps.
+
+Fix: remove "Built in Switzerland" from the footer text. Keep the Swiss flag SVG (which already signals Swiss origin visually) + "Nothing leaves your device" only. Result should read left-to-right in one line:
+  [🇨🇭 flag] Nothing leaves your device  ....  [↓ Download]  [in]  [X]
+
+PROBLEM 3: No action. Hero number sizing is correct now — just confirming.
+
+Apply the two fixes. Test both on-screen at 1400px and via PNG export. The goal: footer on single line, hero number centered in its column with clean right margin, PNG and screen visually identical in proportions.
+
+Do NOT commit yet.

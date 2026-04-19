@@ -1,0 +1,49 @@
+Hold the commits. Before I validate 04.5, implement these fixes for number clarity and cohesion.
+
+=== DECISION ===
+- The report is a CUMULATIVE report since install. All primary numbers (hero, map, stats) reference counters.total, byCountry, byHost accumulated since the extension was installed.
+- The popup shows BOTH today's count (primary, big) AND cumulative (secondary, smaller). They must always agree with the report for cumulative, and today's count is the popup's own thing.
+
+=== CHANGES ===
+
+1. Popup: show both metrics.
+   Keep today's count as the big primary Fraunces number (e.g. 892). Below it: "REQUESTS TODAY" in mono uppercase small.
+   Add a secondary line beneath: "{cumulative} since install" in mono, smaller, ink-muted. Example: "1,512 since install".
+   
+2. Report hero: switch to cumulative (counters.total).
+   The big red Fraunces number becomes counters.total.
+   Below it, add a prominent subtitle: "REQUESTS SENT SINCE INSTALL" in Fraunces italic or Inter uppercase — pick what matches v11 rhythm.
+   The word "requests" must be unmissable — it's the metric name.
+
+3. Report map: cumulative counts.
+   {N} in mapHeadline → cumulative counters.byCountry.US
+   {C} in mapHeadline → number of distinct countries across cumulative byCountry
+   Map arcs and dots: aggregate cumulative byHost counts across all days. Destinations list: group cumulative byHost by country, sum, display.
+
+4. Report dateline: show the observation window, not "today".
+   Replace "Sat 19 Apr · 1 day of data" with: "Since {install_date} · {N} days observed"
+   where install_date is the earliest oys_events_YYYYMMDD key's date, and {N} days observed = daysActive (existing metric, ≥5 events per day).
+   Example: "Since 18 Apr · 2 days observed"
+
+5. Report stats row: three stats, cumulative.
+   - "% routed to USA" — cumulative
+   - "Cities · N countries" — cumulative
+   - "AI vendors contacted" — cumulative
+   All three are cumulative, no change of meaning needed. Just make sure they read from cumulative, not today.
+
+6. Report banner logic:
+   - If counters.total === 0: show banner "No data yet. Open some AI sites and come back."
+   - Else if daysActive < 1: show banner "Less than a day of data. The report will get richer as you keep the extension on."
+   - Else if oys_active === false: show banner "Monitoring is currently paused. Resume from the extension icon."
+
+7. Verify by walking through: if counters.total = 1,512 and counters.today = 892:
+   - Popup shows: big "892" + "REQUESTS TODAY" + small "1,512 since install"
+   - Report hero shows: big "1,512" + "REQUESTS SENT SINCE INSTALL"
+   - Report dateline: "Since 18 Apr · 2 days observed"
+   - Report stats: cumulative numbers
+   - Nowhere does "892" appear in the report (it's popup-only)
+
+Do not commit yet. After implementation, tell me:
+- The exact JS expressions used for today's count and cumulative count
+- Confirmation that the popup's "since install" number and the report's hero number are always reading the same storage key
+- Any edge case you noticed during implementation
