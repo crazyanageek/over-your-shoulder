@@ -46,7 +46,6 @@ const COUNTRY_NAME = {
 
 const FALLBACK_PUNCHLINES = {
   masthead: ["Your browser had a chattier day than you."],
-  heroSub: ["You didn't authorize most of these. They went out anyway."],
   mapHeadline: {
     usDominant: ["Your data crossed the Atlantic {N} times today."],
     neutral:    ["{N} transmissions left this laptop today."],
@@ -82,6 +81,49 @@ function countDaysActive(all) {
     if (Array.isArray(value) && value.length >= MIN_EVENTS_FOR_ACTIVE_DAY) count++;
   }
   return count;
+}
+
+// Groups timestamps into sessions (5-min gap), sums durations, derives the
+// "X minutes / Y requests / one every Z" stats rendered in the hero-sub.
+// Returns null when there's nothing to report (empty storage).
+function computeExposureStats(all, counters) {
+  const totalRequests = counters && counters.total ? counters.total : 0;
+  if (totalRequests === 0) return null;
+
+  const timestamps = [];
+  for (const [key, value] of Object.entries(all)) {
+    if (!key.startsWith(EVENTS_PREFIX)) continue;
+    if (!Array.isArray(value)) continue;
+    for (const ev of value) {
+      if (ev && typeof ev.timestamp === "number") timestamps.push(ev.timestamp);
+    }
+  }
+  if (timestamps.length === 0) return null;
+  timestamps.sort((a, b) => a - b);
+
+  const GAP_MS = 300000;   // 5 min gap starts a new session
+  const MIN_MS = 30000;    // single-event sessions count as 30s
+
+  let sumMs = 0;
+  let sessions = 1;
+  let sessionStart = timestamps[0];
+  let sessionEnd = timestamps[0];
+
+  for (let i = 1; i < timestamps.length; i++) {
+    const t = timestamps[i];
+    if (t - sessionEnd > GAP_MS) {
+      sumMs += Math.max(sessionEnd - sessionStart, MIN_MS);
+      sessions += 1;
+      sessionStart = t;
+    }
+    sessionEnd = t;
+  }
+  sumMs += Math.max(sessionEnd - sessionStart, MIN_MS);
+
+  const totalMinutes = sumMs < 60000 ? 1 : Math.round(sumMs / 60000);
+  const secondsPerRequest = sumMs / 1000 / totalRequests;
+
+  return { totalMinutes, totalRequests, secondsPerRequest, sessionCount: sessions };
 }
 
 function pickRandom(arr) {
@@ -192,15 +234,59 @@ function renderHeroEmpty() {
   hero.append(l1, l2);
 }
 
-function renderHeroSub(line, total) {
+function renderHeroSub(stats, total) {
   const el = document.querySelector(".hero-sub");
   el.replaceChildren();
   const caption = document.createElement("span");
   caption.className = "caption-label";
   caption.textContent = "Requests your browser has sent to AI servers";
   el.appendChild(caption);
-  const text = total === 0 ? "No data yet. Come back tomorrow." : line;
-  el.appendChild(document.createTextNode(text));
+  if (total === 0 || !stats) {
+    el.appendChild(document.createTextNode("No data yet. Come back tomorrow."));
+    return;
+  }
+  renderExposureSentence(el, stats);
+}
+
+function renderExposureSentence(el, stats) {
+  const { totalMinutes, totalRequests, secondsPerRequest } = stats;
+
+  const numSpan = (text) => {
+    const s = document.createElement("span");
+    s.className = "exposure-stat-number";
+    s.textContent = text;
+    return s;
+  };
+  const text = (t) => document.createTextNode(t);
+
+  el.appendChild(text(" In "));
+  el.appendChild(numSpan(String(totalMinutes)));
+  el.appendChild(text(totalMinutes === 1 ? " minute on AI sites, your browser sent " : " minutes on AI sites, your browser sent "));
+
+  if (totalRequests === 1) {
+    el.appendChild(numSpan("1"));
+    el.appendChild(text(" request."));
+  } else {
+    el.appendChild(numSpan(totalRequests.toLocaleString()));
+    el.appendChild(text(" requests."));
+  }
+
+  if (secondsPerRequest > 300) return;
+
+  el.appendChild(text(" That\u2019s one every "));
+
+  if (secondsPerRequest < 1) {
+    el.appendChild(numSpan(secondsPerRequest.toFixed(1)));
+    el.appendChild(text(" seconds."));
+  } else if (secondsPerRequest < 60) {
+    const z = Math.round(secondsPerRequest);
+    el.appendChild(numSpan(String(z)));
+    el.appendChild(text(z === 1 ? " second." : " seconds."));
+  } else {
+    const w = Math.round(secondsPerRequest / 60);
+    el.appendChild(numSpan(String(w)));
+    el.appendChild(text(w === 1 ? " minute." : " minutes."));
+  }
 }
 
 function formatLegendVal(val, max) {
@@ -468,9 +554,9 @@ async function initReport() {
   const punchlines = await loadPunchlines();
   const lang = "en";
 
-  const masthead  = pickRandom(punchlines.masthead?.[lang]  || FALLBACK_PUNCHLINES.masthead);
-  const heroSub   = pickRandom(punchlines.heroSub?.[lang]   || FALLBACK_PUNCHLINES.heroSub);
-  const verdict   = pickVerdict(punchlines.verdict?.[lang]  || FALLBACK_PUNCHLINES.verdict, score, daysActive);
+  const masthead = pickRandom(punchlines.masthead?.[lang] || FALLBACK_PUNCHLINES.masthead);
+  const verdict  = pickVerdict(punchlines.verdict?.[lang] || FALLBACK_PUNCHLINES.verdict, score, daysActive);
+  const exposureStats = computeExposureStats(all, counters);
 
   const totalRequests = counters.total || 0;
   const byCountry = counters.byCountry || {};
@@ -503,7 +589,7 @@ async function initReport() {
     renderHeroEmpty();
   } else {
     renderHero(totalRequests);
-    renderHeroSub(heroSub, totalRequests);
+    renderHeroSub(exposureStats, totalRequests);
   }
   renderScore(score, breakdown, verdict);
   renderMapHeadline(mapHeadline);

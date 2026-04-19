@@ -44,19 +44,6 @@
     }
   },
 
-  "heroSub": {
-    "$note": "The italic line under the big number. Must stand on its own without mentioning specific counts — the 1,211 above already does that work.",
-    "en": [
-      "Most happened while you were reading something else. None asked first.",
-      "Your browser went places today. Most trips weren't your idea.",
-      "You didn't authorize most of these. They went out anyway.",
-      "Each one left without a word. Some before your page finished loading.",
-      "More happened between your keystrokes than because of them.",
-      "You simply had the browser open. It took care of the rest.",
-      "Not all of these were your idea. Most were not."
-    ]
-  },
-
   "verdict": {
     "$note": "Displayed next to the score ring. Deterministic by score band, random within the band. The band thresholds must mirror lib/score.js.",
     "en": {
