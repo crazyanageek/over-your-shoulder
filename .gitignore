@@ -6,3 +6,7 @@ Thumbs.db
 node_modules/
 .env
 .env.local
+
+# Local asset working folders
+logo and icones/
+logo and icones.zip
