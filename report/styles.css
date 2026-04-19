@@ -140,6 +140,39 @@ body {
   border-bottom: 1px solid var(--ink);
   overflow: hidden;
 }
+
+/* Empty-state hero: replaces the normal title/number/caption block when
+   counters.total === 0. Fills the hero grid row and centers a 2-line
+   pedagogical message vertically + horizontally. */
+.hero.hero-empty-state {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  text-align: center;
+  gap: 0.6rem;
+}
+.he-line1 {
+  margin: 0;
+  font-family: var(--font-display);
+  font-variation-settings: "opsz" 72;
+  font-style: italic;
+  font-weight: 400;
+  font-size: 1.4rem;
+  line-height: 1.2;
+  color: var(--ink);
+}
+.he-line2 {
+  margin: 0;
+  font-family: var(--font-display);
+  font-variation-settings: "opsz" 48;
+  font-style: italic;
+  font-weight: 400;
+  font-size: 1rem;
+  line-height: 1.5;
+  color: var(--ink-muted);
+  max-width: 42ch;
+}
 .hero-top {
   display: grid;
   grid-template-columns: 1fr auto;

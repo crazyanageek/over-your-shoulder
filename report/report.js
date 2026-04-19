@@ -177,6 +177,21 @@ function renderHero(total) {
   el.textContent = total === 0 ? "—" : total.toLocaleString();
 }
 
+function renderHeroEmpty() {
+  const hero = document.querySelector(".hero");
+  if (!hero) return;
+  hero.classList.add("hero-empty-state");
+  hero.replaceChildren();
+  const l1 = document.createElement("p");
+  l1.className = "he-line1";
+  l1.textContent = "Nothing to show yet.";
+  const l2 = document.createElement("p");
+  l2.className = "he-line2";
+  l2.textContent =
+    "Send a prompt to any AI \u2014 Open ChatGPT, Claude, Gemini \u2014 anything \u2014 refresh this page, and watch what your browser does.";
+  hero.append(l1, l2);
+}
+
 function renderHeroSub(line, total) {
   const el = document.querySelector(".hero-sub");
   el.replaceChildren();
@@ -479,9 +494,17 @@ async function initReport() {
 
   renderBanner(isActive, totalRequests, daysActive);
   const installDateKey = earliestEventKey(all);
-  renderMasthead(masthead, computeDateline(daysActive, installDateKey));
-  renderHero(totalRequests);
-  renderHeroSub(heroSub, totalRequests);
+  const dateline = computeDateline(daysActive, installDateKey);
+  if (totalRequests === 0) {
+    dateline.daysStr = "awaiting data";
+  }
+  renderMasthead(masthead, dateline);
+  if (totalRequests === 0) {
+    renderHeroEmpty();
+  } else {
+    renderHero(totalRequests);
+    renderHeroSub(heroSub, totalRequests);
+  }
   renderScore(score, breakdown, verdict);
   renderMapHeadline(mapHeadline);
   await renderMap(counters);
@@ -499,11 +522,9 @@ function renderBanner(isActive, totalRequests, daysActive) {
   el.className = "banner";
   el.textContent = "";
   el.hidden = true;
-  if (totalRequests === 0) {
-    el.classList.add("warning");
-    el.textContent = "No data yet. Open some AI sites and come back.";
-    el.hidden = false;
-  } else if (daysActive < 1) {
+  // total === 0 no longer shows a banner; the hero is replaced with a
+  // dedicated empty-state message instead (see renderHeroEmpty).
+  if (totalRequests > 0 && daysActive < 1) {
     el.classList.add("warning");
     el.textContent = "Less than a day of data. The report will get richer as you keep the extension on.";
     el.hidden = false;
