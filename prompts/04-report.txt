@@ -1,0 +1,242 @@
+Phase 04 — Build the LinkedIn-ready shareable report page and integrate it with the extension.
+
+=== CONTEXT ===
+
+The design has been finalized through 11 visual iterations. You will reproduce it exactly in the extension, connect it to live data from chrome.storage.local, use the editorial copy library at /report/data/punchlines.json, and update the popup to launch the report.
+
+Reference design file: the user has an HTML mockup locally, but here is the complete specification below — follow it exactly.
+
+Before you write a single line of code, call the view tool on /mnt/skills/public/frontend-design/SKILL.md and follow its guidance.
+
+=== STEP 1 — Bundle external dependencies locally ===
+
+Chrome Manifest V3 forbids loading remote scripts. You must bundle D3, topojson-client, and the world topology JSON into the extension.
+
+Create /report/lib/ and download:
+1. D3 v7 minified → /report/lib/d3.min.js
+   URL: https://cdn.jsdelivr.net/npm/d3@7/dist/d3.min.js
+2. topojson-client v3 minified → /report/lib/topojson-client.min.js
+   URL: https://cdn.jsdelivr.net/npm/topojson-client@3/dist/topojson-client.min.js
+
+Create /report/data/ (if it does not exist — punchlines.json is already there) and download:
+3. World atlas 110m → /report/data/world-110m.json
+   URL: https://cdn.jsdelivr.net/npm/world-atlas@2/countries-110m.json
+
+Use bash curl to fetch these files. Verify sizes: d3 ~280KB, topojson-client ~7KB, world-110m.json ~110KB.
+
+=== STEP 2 — Update manifest.json ===
+
+Add to the manifest:
+- web_accessible_resources: expose /report/* to extension pages (so the report can be opened as a chrome-extension:// URL)
+- content_security_policy.extension_pages: allow fonts.googleapis.com and fonts.gstatic.com (for Google Fonts)
+  Specifically: "script-src 'self'; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src 'self' https://fonts.gstatic.com; connect-src 'self';"
+
+The 'unsafe-inline' for style-src is necessary because D3 sets inline styles on SVG elements at runtime. Script-src stays 'self' only — no remote scripts.
+
+=== STEP 3 — Create the report structure ===
+
+Create these files:
+/report/index.html     — the page shell
+/report/styles.css     — all styles, extracted from the design spec below
+/report/report.js      — rendering logic, storage reads, punchline picker, SVG map builder
+
+=== STEP 4 — /report/styles.css — full design tokens and components ===
+
+Copy these CSS custom properties verbatim:
+
+:root {
+  --bg: #FAFAF7;
+  --ink: #0E0E0D;
+  --ink-muted: #6B6B6A;
+  --ink-soft: #A8A8A3;
+  --rule: #D9D6CC;
+  --rule-soft: #ECEAE2;
+  --coast: #6B6B6A;
+  --alarm: #B91C1C;
+  --warn: #E28413;
+  --heat-1: #CC9500;
+  --heat-2: #E28413;
+  --heat-3: #B91C1C;
+  --make-volume: #2B2B2A;
+  --make-cat: #BFA57A;
+  --make-geo: #B91C1C;
+  --make-cont: #3E5C66;
+  --font-display: "Fraunces", Georgia, serif;
+  --font-body: "Inter", -apple-system, system-ui, sans-serif;
+  --font-mono: "JetBrains Mono", Menlo, monospace;
+  --ease: cubic-bezier(0.22, 0.61, 0.36, 1);
+}
+
+The full CSS is everything from the final preview (v11). Layout specs:
+- Body: off-white #FAFAF7 bg, Inter 15px, feature-settings "ss01" "cv11", antialiased
+- Wrapping body background is #C9C4B6 (warm gray), badge floats centered with shadow
+- .badge: max-width 600px, aspect-ratio 4/5, display grid 6 rows auto 1fr auto auto auto auto
+- All borders are 1px solid var(--ink) between sections
+- Type scale: hero number clamp(4.5rem, 15vw, 8rem), hero title clamp(1.8rem, 5.5vw, 2.5rem), ring num 2rem, stats value 1.7rem
+- Hero is restructured: .hero-top grid (title + number) THEN .hero-sub as a separate block below (NOT in the grid — this is critical so the sub-line is not crushed by the number's line-box)
+- Ring: 95px, stroke-width 4px, stroke-linecap round, rotate -90deg, stroke-dasharray "X 327" where X = score × 3.27
+- Composition bar: flex of 4 segments + empty. Each seg uses flex: <value> 0 0 for proportional width. Segments are: seg-volume (graphite), seg-geo (alarm red), seg-cont (slate blue), then seg-empty (55 to go filling remainder to 100). seg-cat appears only if categories > 0.
+- Map: D3 Natural Earth, scale 95, center [-10, 20], 600×200 viewBox. Three layers: land fills (#EEECE3 no stroke), internal borders (rule color, 0.4 stroke, topojson.mesh filter a !== b), coastlines (coast color, 0.7 stroke, mesh filter a === b).
+- Flow arcs: lifted sine curve, color-coded by tier: tier 3 red/2.6 stroke/0.92 opacity, tier 2 orange #E28413/1.9/0.9, tier 1 gold #CC9500/1.5/0.9. Dots 6/3.8/3.3px respectively.
+- Origin at Lausanne [6.63, 46.52]: two origin-rings + filled dot + "YOU ARE HERE" label with cream background rect (0.4px ink stroke).
+- Swiss flag SVG in footer: 13px, red bg #D52B1E, white cross at proper 6:1 proportions.
+- Fade-in animation: 420ms on body load only.
+
+Google Fonts link in <head>: Fraunces (italic + variable opsz + weights 400-700), Inter (400-700), JetBrains Mono (400-500).
+
+If details are ambiguous, look at the final CSS I have shared in our earlier conversation iterations — go fetch it from my local preview if you need to. Ask the user if anything is unclear BEFORE guessing.
+
+=== STEP 5 — /report/index.html — structure ===
+
+Structure (exact order, no deviations):
+1. <header class="masthead"> with .punchline (left, italic Fraunces, 0.95rem) + .dateline (right, mono 11px, uppercase). Two dateline spans separated by a muted ·.
+2. <section class="hero"> with TWO nested blocks:
+   - .hero-top (grid 2 cols): h1.hero-title + div.hero-number-wrap > .hero-number
+   - p.hero-sub with .caption-label span + strong-text spans
+3. <section class="score-band"> (grid 2 cols): .ring (SVG + ring-center div) + .composition (c-header + c-bar + c-legend)
+4. <section class="map-band">: h2.map-headline + svg#worldmap + div.destinations-list (by COUNTRY grouping, not city)
+5. <section class="stats-row">: 3 .stat divs (first has .alarm class for red 97%)
+6. <footer class="foot">: Swiss flag SVG + span on left, .cta italic link on right
+
+Hero number element must have id="hero-number" for the resize script.
+World map svg must have id="worldmap".
+
+All the interpolation markers ({N}, {C}, {score}, etc.) are handled by report.js — write the HTML with placeholder text that report.js will replace on load.
+
+=== STEP 6 — /report/report.js — the rendering logic ===
+
+The report runs in the extension context (chrome-extension:// URL) so it has full access to chrome.storage.local. No message passing needed.
+
+The logic flow:
+
+async function initReport() {
+  // 1. Read all storage data
+  const all = await chrome.storage.local.get(null);
+  const counters = all.oys_counters || defaultCounters();
+  const daysActive = countDaysActive(all);
+
+  // 2. Compute the score (import or copy from /lib/score.js)
+  const { score, breakdown } = computeScore(counters, daysActive);
+
+  // 3. Load punchlines config
+  const punchlinesURL = chrome.runtime.getURL('report/data/punchlines.json');
+  const punchlines = await fetch(punchlinesURL).then(r => r.json());
+
+  // 4. Pick punchlines (random at each open)
+  const lang = 'en';
+  const masthead = pickRandom(punchlines.masthead[lang]);
+  const heroSub = pickRandom(punchlines.heroSub[lang]);
+  const verdict = pickVerdict(punchlines.verdict[lang], score);
+
+  // 5. Pick map headline based on geographic distribution
+  const totalRequests = counters.total || 0;
+  const usShare = (counters.byCountry?.US || 0) / Math.max(1, totalRequests);
+  const mapHeadlineTemplate = usShare >= 0.8
+    ? pickRandom(punchlines.mapHeadline[lang].usDominant)
+    : pickRandom(punchlines.mapHeadline[lang].neutral);
+  const countryCount = Object.keys(counters.byCountry || {}).length;
+  const usTotal = counters.byCountry?.US || 0;
+  const mapHeadline = mapHeadlineTemplate
+    .replace('{N}', usDominant ? usTotal.toLocaleString() : totalRequests.toLocaleString())
+    .replace('{C}', countryCount);
+
+  // 6. Render everything into the DOM
+  renderMasthead(masthead, computeDateline(daysActive));
+  renderHero(totalRequests);   // puts the big number
+  renderHeroSub(heroSub);
+  renderScore(score, breakdown, verdict);
+  renderMap(counters);         // uses D3 + world-110m.json
+  renderStats(counters, totalRequests);
+  renderFooter();
+
+  // 7. Fit hero number dynamically (shrink if it overflows)
+  fitHeroNumber();
+}
+
+Key helpers:
+
+function pickRandom(arr) {
+  return arr[Math.floor(Math.random() * arr.length)];
+}
+
+function pickVerdict(verdictObj, score) {
+  let band;
+  if (score <= 20) band = 'low';
+  else if (score <= 40) band = 'mild';
+  else if (score <= 60) band = 'moderate';
+  else if (score <= 80) band = 'high';
+  else band = 'alarming';
+  return pickRandom(verdictObj[band].lines);
+}
+
+function computeDateline(daysActive) {
+  const d = new Date();
+  const weekday = d.toLocaleDateString('en-US', { weekday: 'short' });
+  const day = d.getDate();
+  const month = d.toLocaleDateString('en-US', { month: 'short' });
+  const dateStr = `${weekday} ${day} ${month}`;
+  const daysStr = daysActive === 1 ? '1 day of data' : `${daysActive} days of data`;
+  return { dateStr, daysStr };
+}
+
+Map rendering:
+- Load /report/data/world-110m.json via fetch(chrome.runtime.getURL(...))
+- Build destinations array from counters.byHost, mapping each host to its known coords (maintain a coords map hardcoded in report.js for all 27 endpoints, with city-level lat/lon)
+- Draw land, internal borders, coastlines, arcs from Lausanne, destination dots, origin rings, YOU ARE HERE label with bg rect
+
+Destinations list below map: group by country (not city). Sum counts per country. Display with colored dot = color of the most-frequent tier in that country.
+
+Edge cases:
+- If totalRequests is 0: show hero number as "—" and replace sub-text with "No data yet. Come back tomorrow."
+- If daysActive === 0: still render, but verdict reads "No signal yet".
+- If punchlines.json fails to load: fall back to hardcoded English defaults (one per zone) and log a warning to console.
+
+=== STEP 7 — Update /popup/popup.html and popup.js ===
+
+Redesign the popup to match the report aesthetic at small scale:
+
+New popup layout (320×400px):
+- Top: "Who is" muted italic Fraunces / "looking over your shoulder?" black bold Fraunces, like the report headline but scaled down (~1.6rem)
+- Middle: today's request count (big Fraunces number, red), tiny label "today"
+- Small score bar with ring (or compact gauge — reuse ring style, scaled to ~60px)
+- Bottom: two buttons stacked:
+  - "OPEN DAILY REPORT →" (primary, opens /report/index.html in a new tab via chrome.tabs.create)
+  - Pause/Resume toggle (existing behavior, as secondary)
+
+Popup styles: reuse the design tokens from /report/styles.css. Import the Google Fonts link into the popup too. Keep it dense but readable.
+
+The "OPEN DAILY REPORT" button handler:
+chrome.tabs.create({ url: chrome.runtime.getURL('report/index.html') });
+
+=== STEP 8 — Test flow ===
+
+After implementation, provide me with:
+1. A numbered list of verification steps I can run in Chrome to confirm everything works
+2. Screenshots or descriptions of what I should see in the popup after reload
+3. How I open the full report and what appears
+4. Any edge cases encountered (empty storage, missing punchlines.json, etc.)
+5. Final extension size in KB (including bundled dependencies)
+
+=== STEP 9 — Commit plan ===
+
+Do NOT commit automatically. Two commits expected, run only after user validation:
+
+Commit 1:
+  git add report/lib/ report/data/world-110m.json
+  git commit -m "chore: bundle D3, topojson, and world atlas locally for MV3 compliance"
+
+Commit 2:
+  git add report/ popup/ manifest.json
+  git commit -m "feat: add LinkedIn-style shareable report with dynamic punchlines and popup redesign"
+
+Push both: git push
+
+=== DO NOT ===
+
+- Do NOT load any remote script at runtime. All JS libs bundled locally.
+- Do NOT send any outbound network call from the report or popup.
+- Do NOT read request bodies, headers, or responses — we still respect the metadata-only contract.
+- Do NOT add analytics, telemetry, or "anonymous usage stats."
+- Do NOT invent data. If counters are empty, show empty states honestly.
+- Do NOT hardcode punchlines in the JS — they must come from punchlines.json.
+- Do NOT add frameworks (React, Vue, Tailwind, etc.). Vanilla HTML/CSS/JS only.

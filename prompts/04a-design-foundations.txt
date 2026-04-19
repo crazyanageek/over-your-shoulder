@@ -1,0 +1,120 @@
+Phase 4A — Visual foundations for the Over Your Shoulder shareable report.
+
+Goal: establish the design system. No report content yet. Just a test page that showcases every primitive component so we can validate the look-and-feel before building the actual report.
+
+=== CRITICAL: Read the design skill first ===
+
+Before writing any HTML or CSS, call the view tool on /mnt/skills/public/frontend-design/SKILL.md and follow its guidance. This is not optional.
+
+=== Create /report/ directory structure ===
+
+/report/index.html          — the report page (placeholder title for now: "Design System Preview")
+/report/styles/tokens.css   — CSS custom properties for colors, typography, spacing
+/report/styles/base.css     — reset, body defaults, typography base
+/report/styles/components.css — primitive components
+/report/fonts.html          — single <link> block importing Google Fonts (Fraunces, Inter, JetBrains Mono)
+
+=== tokens.css — EXACT values, do not improvise ===
+
+:root {
+  /* Colors — 6 total, use only these */
+  --bg: #FAFAF7;
+  --ink: #1A1A1A;
+  --ink-muted: #6B6B6B;
+  --rule: #E8E6E0;
+  --alarm: #B91C1C;
+  --safe: #0F4C3A;
+
+  /* Type scale — Fraunces for display, Inter for UI, JetBrains Mono for data */
+  --font-display: "Fraunces", Georgia, serif;
+  --font-body: "Inter", -apple-system, system-ui, sans-serif;
+  --font-mono: "JetBrains Mono", Menlo, monospace;
+
+  /* Type sizes */
+  --size-hero: clamp(5rem, 12vw, 9rem);      /* huge hero number */
+  --size-display: clamp(2.5rem, 5vw, 4rem);  /* section titles */
+  --size-lede: 1.375rem;                      /* punchline */
+  --size-body: 1.0625rem;                     /* body */
+  --size-small: 0.9375rem;                    /* captions, labels */
+  --size-micro: 0.8125rem;                    /* footer, legal */
+
+  --line-tight: 1.05;
+  --line-snug: 1.25;
+  --line-normal: 1.55;
+  --line-loose: 1.7;
+
+  /* Weights — keep it disciplined */
+  --weight-regular: 400;
+  --weight-medium: 500;
+  --weight-semibold: 600;
+
+  /* Spacing scale — 8px base */
+  --space-1: 0.5rem;    /* 8 */
+  --space-2: 1rem;      /* 16 */
+  --space-3: 1.5rem;    /* 24 */
+  --space-4: 2rem;      /* 32 */
+  --space-6: 3rem;      /* 48 */
+  --space-8: 4rem;      /* 64 */
+  --space-12: 6rem;     /* 96 */
+  --space-16: 8rem;     /* 128 */
+
+  /* Layout */
+  --content-max: 720px;
+  --content-wide-max: 960px;
+
+  /* Motion */
+  --ease: cubic-bezier(0.22, 0.61, 0.36, 1);
+  --fade-in-duration: 320ms;
+}
+
+=== base.css — reset and typography base ===
+
+- Modern reset (box-sizing border-box, margin 0 on body etc.)
+- Body: font-family var(--font-body), color var(--ink), background var(--bg), font-size var(--size-body), line-height var(--line-normal), font-feature-settings "ss01", "cv11" (OpenType refinements for Inter)
+- Fraunces with optical sizing enabled (font-variation-settings "opsz" 144 for display sizes)
+- Anti-aliasing: -webkit-font-smoothing: antialiased; -moz-osx-font-smoothing: grayscale
+- Selection color: background var(--ink); color var(--bg)
+- Headings: font-family var(--font-display), font-weight var(--weight-semibold), line-height var(--line-tight), letter-spacing -0.02em
+- Paragraphs: max-width 60ch for readability
+- Subtle entrance: body { animation: fadeIn var(--fade-in-duration) var(--ease) both; } @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
+
+=== components.css — primitives ===
+
+Build and style these 8 primitives, and demonstrate each one in index.html:
+
+1. .hero-number — massive Fraunces numeral, size var(--size-hero), weight medium, line-height var(--line-tight), with the "/100" suffix in a much smaller inline size in ink-muted
+2. .section-title — Fraunces display size, as per base headings
+3. .eyebrow — tiny uppercase label in Inter, size var(--size-micro), letter-spacing 0.08em, ink-muted, above a section title
+4. .lede — opening paragraph, Fraunces italic, size var(--size-lede), line-height var(--line-snug), color ink
+5. .body-text — Inter, size var(--size-body)
+6. .data-line — a row with label on the left, value on the right, monospace on the value (JetBrains Mono), thin rule between, padding var(--space-2) 0
+7. .meter — a horizontal progress bar, height 2px, background rule, filled with ink. Variant .meter.alarm fills with alarm color. No rounded corners. Width comes from a --fill custom property (e.g., style="--fill: 67%")
+8. .rule — a full-width 1px divider, color rule, margin var(--space-6) 0
+
+=== index.html — the showcase page ===
+
+Single centered column, content-max width, generous vertical rhythm. Display each primitive with its name as an eyebrow label above it, arranged top-to-bottom in the order listed. Use a mix of realistic content (Fake data: "Your Data Exposure Score" → 39, a sample punchline, a fake data-line "Requests routed to the United States" → 1,188, etc.) so we can feel how the primitives read with actual content.
+
+Include at the very top of the page a small "Design System Preview — v0.1" eyebrow in muted ink.
+
+=== DO NOT ===
+
+- Do not add any frontend framework (no React, no Vue, no Tailwind)
+- Do not add rounded corners beyond 4px anywhere
+- Do not add shadows, gradients, or glow effects
+- Do not add icons (we'll add them later only for Download / Share buttons)
+- Do not build the actual report yet — this is ONLY the design system preview
+
+=== After implementation ===
+
+Tell me:
+1. The exact URL or file path I should open in my browser to preview (should be /report/index.html opened directly — no build step required)
+2. Any decisions you made where the spec was ambiguous
+3. Any concern about how Fraunces and Inter render at these sizes (font weights available, any missing glyphs for French accents)
+
+=== Commit (only after user validation) ===
+
+Wait for "validated 4A, commit and push". Then:
+  git add .
+  git commit -m "feat(report): establish visual design system — tokens, base, primitives"
+  git push

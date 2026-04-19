@@ -1,0 +1,131 @@
+Phase 04.5 — Three polish fixes after validating the main report: real icon, visible pause state, working Share buttons.
+
+=== STEP 1 — Replace placeholder icons with a stylized eye ===
+
+Create three icon PNGs under /icons/:
+- icon16.png (16×16)
+- icon48.png (48×48)
+- icon128.png (128×128)
+
+The mark: a stylized eye. Simple, editorial, readable at all sizes. Concept:
+- Outer shape: a circle (or a horizontal almond / lens shape if you can keep it crisp at 16px)
+- Inner: a solid dark circle (the pupil), centered
+- Background: cream #FAFAF7 (matches the report background — cohesive with brand)
+- Eye outline + pupil: ink #0E0E0D
+
+Approach: author a clean SVG once, then rasterize it at three sizes. At 16px, you may need to thicken the outline slightly and enlarge the pupil proportionally so the shape reads clearly. Do not anti-alias into a blob. Keep pixel crispness.
+
+Use any tool available (ImageMagick, Inkscape, cairosvg via Python, or generate SVG and open in a headless browser). Preview each output in the filesystem before declaring done.
+
+Update manifest.json icons paths if they changed (they should stay the same — just new bytes at the same path).
+
+=== STEP 2 — Visible pause state ===
+
+Three visible signals when the extension is paused (oys_active === false):
+
+2A. Browser toolbar badge.
+In background/service_worker.js, on every state change (chrome.storage.onChanged for oys_active) AND on service worker startup:
+- If paused: chrome.action.setBadgeText({ text: "‖" }) and chrome.action.setBadgeBackgroundColor({ color: "#B91C1C" })
+- If active: chrome.action.setBadgeText({ text: "" })
+This makes the pause state visible directly on the Chrome toolbar icon without opening the popup.
+
+2B. Popup visual state.
+When oys_active === false, the popup must LOOK paused — not just show "Resume" text:
+- Add a subtle ~4px horizontal alarm-red bar across the top of the popup content area
+- Desaturate the big number: change color from var(--alarm) to var(--ink-muted), or dim the whole score-block with opacity: 0.55
+- Show a small uppercase line above the score: "PAUSED · NO DATA IS BEING RECORDED" in mono, alarm-red, letter-spacing 0.15em, font-size 10px
+
+When Resume is clicked, these visual states disappear immediately. When Pause is clicked, they appear immediately.
+
+2C. Report banner for intermediate states.
+At the top of /report/index.html's <main> content (above the masthead), render a SINGLE banner if any of these conditions apply (priority order, only one banner max):
+
+Priority 1 (if oys_active === false at the moment of report generation):
+  "Monitoring is currently paused. Click the extension icon to resume."
+  Banner style: alarm-red left border (3px), cream bg, ink text, italic Fraunces 0.95rem, padding 0.75rem 1rem.
+
+Priority 2 (if daysActive === 0 AND totalRequests > 0):
+  "Less than a day of data collected. Come back tomorrow for a fuller picture."
+  Banner style: slate-blue left border (3px), cream bg, ink-muted text, italic Fraunces 0.9rem.
+
+Priority 3 (if totalRequests === 0):
+  (No banner — the hero already shows "—" and the fallback sub-text. Adding a banner would be redundant.)
+
+If none apply, no banner.
+
+=== STEP 3 — Working Share + Download buttons ===
+
+Replace the current placeholder "Share →" link in the report footer with a proper share group. Design and implementation:
+
+3A. Layout.
+Right side of the footer becomes three controls, separated by 0.75rem:
+  [↓ Download card]  [Share on LinkedIn ↗]  [Share on X ↗]
+
+- "Download card" is the primary action: solid ink background, cream text, 0.9rem Fraunces, subtle uppercase tracking, padding 0.4rem 0.8rem, no border-radius beyond 2px.
+- The two secondary buttons are text-style links with an arrow glyph, ink color, border-bottom 1px ink.
+- If the popup is narrow, the share group wraps to a second row below the left-side "Built in Switzerland" text. Do not compress any button.
+
+3B. Download card — PNG export.
+Use the bundled D3 if possible, OR use a lightweight canvas rendering approach. Since html2canvas is 200KB+ (too much for this one feature), use a simpler technique:
+
+Option A (preferred): use the native <img> + SVG foreignObject + canvas pipeline:
+  1. Serialize the .badge element's outer HTML to a string, wrap it in an SVG foreignObject at exact pixel dimensions (e.g., 600×750)
+  2. Load the SVG as a data URL into an Image element
+  3. Draw the image onto a 1200×1500 canvas (2x for retina)
+  4. Call canvas.toBlob() → download via a temporary <a download> link
+
+Expected gotchas:
+- External stylesheets must be INLINED into the SVG foreignObject (fetch styles.css contents, inline as <style>)
+- Google Fonts won't render inside foreignObject on most browsers. Fallback: at download time, temporarily swap Fraunces/Inter/JetBrains Mono for system fonts (Georgia, system-ui, monospace) — the PNG will look slightly different from the live page but acceptable. Document this known limitation in a code comment.
+- The D3-rendered SVG inside #worldmap must be serialized as-is. It will render fine inside foreignObject as long as its inline styles are preserved.
+
+Filename pattern: over-your-shoulder-YYYY-MM-DD.png (use the current date).
+
+If the foreignObject+canvas approach proves too flaky after a reasonable attempt, fall back to instructing the user: "Right-click the card and save as image" — but only as absolute last resort.
+
+3C. LinkedIn Share button.
+Clicking opens in a new tab:
+  https://www.linkedin.com/sharing/share-offsite/?url={ENCODED_URL}
+
+Where {ENCODED_URL} = encodeURIComponent("https://overyourshoulder.ch").
+
+LinkedIn's API reads og:image and og:description from the target URL at crawl time. Since the landing page doesn't exist yet, the preview will be bare. That's expected and acceptable for now — users clicking through will hit a 404 or a placeholder page. Add an inline code comment: "Landing page at overyourshoulder.ch is coming in phase 06. Share links already point there so existing shares benefit when the page goes live."
+
+3D. X (Twitter) Share button.
+Clicking opens in a new tab:
+  https://twitter.com/intent/tweet?text={ENCODED_TEXT}&url={ENCODED_URL}
+
+{ENCODED_TEXT} = encodeURIComponent(currentMastheadPunchline + " — see what your browser is saying without you:")
+{ENCODED_URL} = encodeURIComponent("https://overyourshoulder.ch")
+
+Use the SAME punchline that's currently displayed in the masthead (the one already rendered on the page). This means each share is slightly different, which is exactly what we want for virality.
+
+=== DO NOT ===
+
+- Do NOT add any outbound network call or analytics.
+- Do NOT fetch a remote PNG generator service. The download must work fully locally.
+- Do NOT break the current storage schema or score computation — this phase is additive only.
+- Do NOT change the existing visual design in ways not specified above.
+
+=== After implementation ===
+
+Tell me:
+1. How to verify the new icon (what to see in chrome://extensions and the toolbar)
+2. How to verify the pause visual state (step-by-step: pause it, what I should see on toolbar, in popup, in report)
+3. How to verify the Download button (what file appears in Downloads, whether fonts render or fall back to system)
+4. How to verify the LinkedIn and X buttons (URLs I should see in the new tab)
+5. Any edge cases or known limitations
+
+=== Commit ===
+
+Do NOT commit automatically. Wait for the user to say "validated, commit and push". Then make TWO commits:
+
+Commit 1:
+  git add icons/ manifest.json
+  git commit -m "chore: replace placeholder icons with a stylized eye mark"
+
+Commit 2:
+  git add background/ popup/ report/
+  git commit -m "feat: add visible pause state and working Share/Download buttons"
+
+Then: git push

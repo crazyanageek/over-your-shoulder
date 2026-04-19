@@ -1,0 +1,16 @@
+Answer to question 1: (c). I've saved the v11 reference file at reference/oys-design-reference.html. Read it to extract:
+- The exact CSS (all design tokens, layout rules, component styles, responsive breakpoints)
+- The exact HTML structure of the .badge component
+- The D3 map rendering script (natural earth projection, coastlines via topojson.mesh, arc lifting sine curve, tier-based stroke widths)
+- The hero-number dynamic fit script
+- The YOU ARE HERE label with background rect
+
+Treat reference/oys-design-reference.html as the visual and structural source of truth. Reproduce it faithfully in /report/index.html, /report/styles.css, and /report/report.js.
+
+Answer to question 2: skip the frontend-design skill. It's a claude.ai internal skill path that doesn't apply to Claude Code on Windows. Proceed without it — the reference file I provide replaces its guidance.
+
+On the token conflict: you're right, 04-report.txt is the source of truth. Ignore earlier token definitions from 04a-design-foundations.txt or any other phase.
+
+On the commits: acknowledged, wait for my explicit "validated, commit and push" before running git operations. Two-commit plan approved as specified.
+
+Proceed. If another ambiguity arises during implementation, stop and ask — do not guess.
