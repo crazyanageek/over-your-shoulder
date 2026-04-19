@@ -1,0 +1,51 @@
+Bug: the empty state (when counters.total === 0) breaks the badge layout across all browsers (confirmed cross-browser, not Edge-specific).
+
+Currently: a banner "No data yet. Open some AI sites and come back." appears ABOVE the masthead. This pushes all content down, causing overflow past the fixed 750px badge height. Text overlaps (hero title clips into score section), the whole card visually breaks.
+
+FIX: replace the banner-on-top approach with a dedicated EMPTY STATE rendering that fits within the 600×750 badge. No banner stacked on top. No content overflow. Same total badge dimensions.
+
+Empty state structure (when counters.total === 0):
+
+1. Masthead UNCHANGED — punchline on left (still rotates), dateline on right reads "Since today · awaiting data" instead of "0 days observed"
+2. Hero section REPLACED with a centered pedagogical block:
+   - No big red number
+   - No "Requests your browser has sent to AI servers" caption
+   - Instead, centered vertically in the hero area, this two-line message:
+     
+     Line 1 (Fraunces italic, ~1.4rem, ink color, weight 400):
+     "Nothing to show yet."
+     
+     Line 2 (Fraunces italic, ~1rem, ink-muted color, weight 400, line-height 1.5):
+     "Send a prompt to any AI — Open ChatGPT, Claude, Gemini — anything — refresh this page, and watch what your browser does."
+     
+     Alignment: centered horizontally, with left/right padding matching the hero's 1rem
+     Vertical position: centered within the hero's intrinsic height so it fills the space the number usually occupies
+     
+3. Score band: keep it, but the ring shows "0" and the composition bar is flat (no segments, just "100 to go" filling entirely). Verdict reads "No signal yet" (italic red). Legend shows all four factors at "0". This is already working in the current code — no change.
+
+4. Map band: keep the map visible with just the origin (YOU ARE HERE pin) and the sphere/land. No arcs, no destination dots. The map-headline says "No outbound requests yet." (already working). Destinations list shows "No outbound requests captured yet." (already working).
+
+5. Stats row: 0%, 0 cities, 0 vendors (already working).
+
+6. Footer UNCHANGED.
+
+KEY CONSTRAINT: total badge height stays at 750px. No banner above. The empty-state message BECOMES the hero content, it doesn't stack on top of it.
+
+Implementation:
+- In report.js, the rendering branch for counters.total === 0 should NOT call renderBanner() at the top
+- Instead, conditionally render the hero section with the empty-state message instead of the normal hero (title + big number + caption + subtext)
+- Keep the masthead, score-band, map-band, stats-row, footer rendering exactly as they are today when total === 0
+
+Copy to use:
+  Line 1: "Nothing to show yet."
+  Line 2: "Send a prompt to any AI — Open ChatGPT, Claude, Gemini — anything — refresh this page, and watch what your browser does."
+
+Remove the old "total === 0" banner logic entirely. The banner for "daysActive < 1 but total > 0" stays (that's a different state — user has some data but not yet a full day). Same for the paused banner.
+
+After implementation, verify:
+1. Fresh install with 0 captured events → badge renders at 750px, NO overflow, empty-state message fills the hero
+2. Paused state with 0 data → paused banner shows, empty-state hero message shows (both should work together)
+3. After sending one prompt and refresh → full report renders normally (total > 0 path)
+4. Compare 0-data screenshot vs 1-prompt screenshot → both stay within 600×750, no layout shift
+
+Do NOT commit yet.
