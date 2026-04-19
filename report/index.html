@@ -1,0 +1,99 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Over Your Shoulder — Daily Report</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Fraunces:ital,opsz,wght@0,9..144,400;0,9..144,500;0,9..144,600;0,9..144,700;0,9..144,900;1,9..144,400;1,9..144,500;1,9..144,600&family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap"
+      rel="stylesheet"
+    />
+    <link rel="stylesheet" href="styles.css" />
+  </head>
+  <body>
+    <div class="badge">
+      <header class="masthead">
+        <div class="punchline">"Your browser had a chattier day than you."</div>
+        <div class="dateline">
+          <span>—</span>
+          <span>—</span>
+        </div>
+      </header>
+
+      <section class="hero">
+        <div class="hero-top">
+          <h1 class="hero-title">
+            Who is looking
+            <span class="strong">over your shoulder?</span>
+          </h1>
+          <div class="hero-number-wrap">
+            <div class="hero-number" id="hero-number">0</div>
+          </div>
+        </div>
+        <p class="hero-sub">
+          <span class="caption-label">Requests your browser sent to AI servers today</span>
+          —
+        </p>
+      </section>
+
+      <section class="score-band">
+        <div class="ring">
+          <svg viewBox="0 0 120 120" xmlns="http://www.w3.org/2000/svg">
+            <circle class="ring-bg" cx="60" cy="60" r="52" />
+            <circle class="ring-fill" cx="60" cy="60" r="52" stroke="#CC9500" stroke-dasharray="0 327" />
+          </svg>
+          <div class="ring-center">
+            <p class="num">0</p>
+            <span class="den">/ 100</span>
+          </div>
+        </div>
+        <div class="composition">
+          <div class="c-header">
+            <span>Exposure makeup</span>
+            <span class="verdict">—</span>
+          </div>
+          <div class="c-bar" aria-label="Score composition"></div>
+          <div class="c-legend"></div>
+        </div>
+      </section>
+
+      <section class="map-band">
+        <h2 class="map-headline">—</h2>
+        <svg id="worldmap" viewBox="0 0 600 200" xmlns="http://www.w3.org/2000/svg"></svg>
+        <div class="destinations-list"></div>
+      </section>
+
+      <section class="stats-row">
+        <div class="stat alarm">
+          <p class="value">—</p>
+          <div class="label">Routed to USA</div>
+        </div>
+        <div class="stat">
+          <p class="value">—</p>
+          <div class="label">Cities</div>
+        </div>
+        <div class="stat">
+          <p class="value">—</p>
+          <div class="label">AI vendors</div>
+        </div>
+      </section>
+
+      <footer class="foot">
+        <div class="left">
+          <svg class="swiss-flag" viewBox="0 0 32 32" xmlns="http://www.w3.org/2000/svg" aria-label="Swiss flag">
+            <rect width="32" height="32" fill="#D52B1E" />
+            <path d="M13 6 h6 v7 h7 v6 h-7 v7 h-6 v-7 h-7 v-6 h7 z" fill="#FFFFFF" />
+          </svg>
+          <span>Built in Switzerland · Nothing leaves your device</span>
+        </div>
+        <div class="cta"><a href="#" id="cta-link">Share →</a></div>
+      </footer>
+    </div>
+
+    <script src="lib/d3.min.js"></script>
+    <script src="lib/topojson-client.min.js"></script>
+    <script type="module" src="report.js"></script>
+  </body>
+</html>

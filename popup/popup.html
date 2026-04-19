@@ -3,55 +3,48 @@
   <head>
     <meta charset="UTF-8" />
     <title>Over Your Shoulder</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Fraunces:ital,opsz,wght@0,9..144,400;0,9..144,500;0,9..144,600;1,9..144,400;1,9..144,500&family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap"
+      rel="stylesheet"
+    />
     <link rel="stylesheet" href="popup.css" />
   </head>
   <body>
-    <main>
-      <header>Over Your Shoulder</header>
+    <main class="popup">
+      <header class="pop-mast">
+        <p class="pop-title">
+          <span class="mast-muted">Who is</span>
+          <span class="mast-strong">looking over your shoulder?</span>
+        </p>
+      </header>
 
-      <div id="today-count" class="big">0</div>
-      <div id="today-label">requests today</div>
-
-      <section id="score-section" class="score">
-        <div class="score-header">
-          Your Data Exposure Score:
-          <span id="score-value">0</span>/100
-        </div>
-        <ul class="bars" id="score-bars">
-          <li data-factor="volume">
-            <span class="factor">Volume</span>
-            <span class="bar">░░░░░░░░░░</span>
-            <span class="val">0/30</span>
-          </li>
-          <li data-factor="categoryDiversity">
-            <span class="factor">Categories</span>
-            <span class="bar">░░░░░░░░░░</span>
-            <span class="val">0/30</span>
-          </li>
-          <li data-factor="geoExposure">
-            <span class="factor">Geography</span>
-            <span class="bar">░░░░░░░░░░</span>
-            <span class="val">0/25</span>
-          </li>
-          <li data-factor="continuity">
-            <span class="factor">Continuity</span>
-            <span class="bar">░░░░░░░░░░</span>
-            <span class="val">0/15</span>
-          </li>
-        </ul>
-        <div id="score-label" class="score-label">Exposition faible</div>
+      <section class="pop-hero">
+        <p class="pop-num" id="popup-today">0</p>
+        <p class="pop-label">today</p>
       </section>
 
-      <div id="subline" class="subline">0 requests total, across 0 endpoints</div>
-
-      <ol id="top-list" class="top-list"></ol>
-
-      <div class="footer">
-        <div id="status" class="status active">
-          <span class="dot"></span>
-          <span class="status-text">Monitoring active</span>
+      <section class="pop-score">
+        <div class="pop-ring">
+          <svg viewBox="0 0 120 120" xmlns="http://www.w3.org/2000/svg">
+            <circle class="ring-bg" cx="60" cy="60" r="52" />
+            <circle class="ring-fill" id="popup-ring-fill" cx="60" cy="60" r="52"
+                    stroke="#CC9500" stroke-dasharray="0 327" />
+          </svg>
+          <div class="pop-ring-center">
+            <span class="num" id="popup-score">0</span>
+          </div>
         </div>
-        <button id="toggle" type="button">Pause</button>
+        <div class="pop-score-side">
+          <p class="pop-score-label">Exposure</p>
+          <p class="pop-verdict" id="popup-verdict">—</p>
+        </div>
+      </section>
+
+      <div class="pop-actions">
+        <button id="open-report" class="pop-btn primary" type="button">OPEN DAILY REPORT →</button>
+        <button id="toggle" class="pop-btn secondary" type="button">Pause</button>
       </div>
     </main>
     <script type="module" src="popup.js"></script>

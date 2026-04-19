@@ -1,0 +1,110 @@
+{
+  "$schema": "Over Your Shoulder — editorial copy library",
+  "$description": "All dynamic copy for the report card. To add, remove, or edit punchlines, simply modify this file. The report reads this at load time and picks one entry per zone at random. Future languages can be added as sibling keys under each zone (e.g., 'en', 'fr', 'de').",
+  "$version": "1.0",
+  "$defaultLanguage": "en",
+
+  "masthead": {
+    "en": [
+      "Your browser had a chattier day than you.",
+      "Silent to you. Loud to Silicon Valley.",
+      "The quietest thing in this laptop is you.",
+      "Your keyboard rested. Your data didn't.",
+      "You closed the lid. It kept whispering.",
+      "Your data has more hobbies than you.",
+      "You think it was quiet. It wasn't.",
+      "Every prompt has a foreign address.",
+      "AI doesn't sleep. Your browser doesn't either.",
+      "Your browser has friends you don't."
+    ]
+  },
+
+  "mapHeadline": {
+    "$note": "Contextual variants. The report chooses a template based on the distribution of destinations. {N} is replaced with the total count of requests sent to the United States (from stats.byCountry.US). If US share is < 80%, a neutral variant is chosen instead.",
+    "en": {
+      "usDominant": [
+        "Your data crossed the Atlantic {N} times today.",
+        "Your browser phoned California {N} times today.",
+        "{N} transmissions left this laptop for the US today.",
+        "{N} postcards to America. Return address: you.",
+        "Silicon Valley received {N} updates about you today.",
+        "{N} round trips to American servers.",
+        "Today, your browser took {N} meetings abroad."
+      ],
+      "neutral": [
+        "{N} transmissions left this laptop today.",
+        "{N} requests, routed across {C} countries.",
+        "{N} outbound calls from a supposedly private browser.",
+        "Your browser reached {C} countries today. {N} times."
+      ]
+    },
+    "$tokens": {
+      "{N}": "total requests to AI endpoints (integer with thousands separator)",
+      "{C}": "number of distinct destination countries"
+    }
+  },
+
+  "heroSub": {
+    "$note": "The italic line under the big number. Must stand on its own without mentioning specific counts — the 1,211 above already does that work.",
+    "en": [
+      "Most happened while you were reading something else. None asked first.",
+      "Your browser went places today. Most trips weren't your idea.",
+      "You didn't authorize most of these. They went out anyway.",
+      "Each one left without a word. Some before your page finished loading.",
+      "More happened between your keystrokes than because of them.",
+      "You simply had the browser open. It took care of the rest.",
+      "Not all of these were your idea. Most were not."
+    ]
+  },
+
+  "verdict": {
+    "$note": "Displayed next to the score ring. Deterministic by score band, random within the band. The band thresholds must mirror lib/score.js.",
+    "en": {
+      "low": {
+        "$range": "0-20",
+        "lines": [
+          "Barely exposed",
+          "Quiet on the wire",
+          "Surprisingly discreet"
+        ]
+      },
+      "mild": {
+        "$range": "21-40",
+        "lines": [
+          "Warming up",
+          "Already leaking, gently",
+          "Moderate and curious"
+        ]
+      },
+      "moderate": {
+        "$range": "41-60",
+        "lines": [
+          "Moderate & climbing",
+          "Louder than you think",
+          "Halfway to loud",
+          "Talkative"
+        ]
+      },
+      "high": {
+        "$range": "61-80",
+        "lines": [
+          "Loud and getting louder",
+          "Well past polite",
+          "Audible from orbit"
+        ]
+      },
+      "alarming": {
+        "$range": "81-100",
+        "lines": [
+          "Shouting in all directions",
+          "An open broadcast",
+          "Every prompt has an audience"
+        ]
+      }
+    }
+  },
+
+  "$howToAddPunchlines": "Add a new string to any zone's array. The report picks one at random on each open. Keep masthead lines under 48 characters to fit in the single-line header. For mapHeadline, always include either {N} or both {N} and {C} tokens. For verdict, ensure the line fits in ~30 characters. No HTML, no line breaks.",
+
+  "$howToAddLanguage": "To add French, duplicate the 'en' key to 'fr' at each zone and translate. Then add a language toggle in the UI that sets a preference in chrome.storage.local. The loader will read that preference and pick the right sub-array."
+}
