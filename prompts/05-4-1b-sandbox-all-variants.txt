@@ -1,0 +1,81 @@
+Phase 05.4.1b — Extend the charts sandbox to show ALL size variants.
+
+The current sandbox shows charts 1-3 only in full mode (85×55mm) and chart 4 only in light mode (170×75mm). But the PDF will render charts at different sizes depending on mode:
+
+- Full mode: 4 charts in a 2×2 grid (85×55mm for vendors/hourly/score, 85×65mm for map)
+- Light mode: 2 or 3 charts stacked vertically full-width (170×75mm or similar per chart)
+
+Per our phase 05.4 plan, light mode will show 3 charts (vendors + hourly + map) in the enlarged format; chart 3 stays as pedagogical note.
+
+Jon needs to visually validate EVERY size variant that will appear in the PDF. Currently 2 variants are visible; 4 more are missing.
+
+=== STEP 1 — VERIFY LIGHT MODE DIMENSIONS FROM full.css ===
+
+Check full.css for the light-mode chart dimensions. Read the .block-tall or .chart-tall or equivalent selectors used in the pedagogical-state / light-mode layout. Report what you find:
+  Light mode chart 1 (vendors): WIDTH × HEIGHT mm
+  Light mode chart 2 (hourly):  WIDTH × HEIGHT mm  
+  Light mode chart 4 (map):     WIDTH × HEIGHT mm (already in sandbox as "wide tall")
+
+If light mode dimensions aren't defined in full.css for charts 1 and 2 yet (because the scaffold only anticipated the map being enlarged), use 170×75mm as the default light-mode size for all charts in light mode, matching the map.
+
+=== STEP 2 — ADD MISSING VARIANTS TO SANDBOX ===
+
+Extend /report/charts-sandbox.html with these additional sections (placed after the existing sections in the HTML):
+
+Section 7 — Chart 1 light (vendors, enlarged):
+  <div class="chart-label">Chart 1 light mode — Vendors bar (multi-vendor, enlarged)</div>
+  <div class="chart-description">170×75mm container — same data as Section 1, rescaled for light mode</div>
+  <div class="chart-container wide tall" id="c1-multi-light"></div>
+
+Section 8 — Chart 1 light mono:
+  <div class="chart-label">Chart 1 light mode — Vendors bar (mono-vendor, enlarged)</div>
+  <div class="chart-description">170×75mm container — same data as Section 2, rescaled for light mode</div>
+  <div class="chart-container wide tall" id="c1-mono-light"></div>
+
+Section 9 — Chart 2 light (hourly standard, enlarged):
+  <div class="chart-label">Chart 2 light mode — Hourly histogram (standard, enlarged)</div>
+  <div class="chart-description">170×75mm container — same data as Section 3, rescaled for light mode</div>
+  <div class="chart-container wide tall" id="c2-standard-light"></div>
+
+Section 10 — Chart 2 light concentrated (hourly concentrated, enlarged):
+  <div class="chart-label">Chart 2 light mode — Hourly histogram (concentrated, enlarged)</div>
+  <div class="chart-description">170×75mm container — same data as Section 4, rescaled for light mode</div>
+  <div class="chart-container wide tall" id="c2-concentrated-light"></div>
+
+Section 11 — Chart 4 full (map, smaller grid-fit):
+  <div class="chart-label">Chart 4 full mode — Enriched map (grid-fit)</div>
+  <div class="chart-description">85×65mm container — same data as Section 6, rescaled for full mode grid</div>
+  <div class="chart-container tall" id="c4-map-full"></div>
+
+=== STEP 3 — RE-USE EXISTING RENDERERS ===
+
+The renderers already exist in the sandbox. For each new section, call the same renderer with the same data but targeting the new container ID.
+
+For SVG-based charts (1, 2, 3): each renderer reads the container's bounding box to compute coordinates. At a larger container size, bars become thicker, hourly bars wider, etc. The SVG's viewBox approach should handle the rescaling naturally via preserveAspectRatio — but DOUBLE-CHECK that the rendering scales properly. If the charts look stretched weirdly at the larger size, adjust the SVG rendering to adapt BAR_W, BAR_H, or similar constants based on container size.
+
+For the D3 map: the projection's scale parameter is likely computed from container width. Re-running the renderer with the smaller 85×65mm container should naturally produce a smaller map. Verify coastlines/arcs/dots look right at the smaller size.
+
+=== STEP 4 — VISUAL VALIDATION ===
+
+Report back with screenshots (or description) of each new section. Jon opens the sandbox, scrolls through all 11 sections, validates:
+- Bars don't look stretched or too thin in light mode
+- Labels don't overlap in light mode
+- Map remains readable at full mode (85×65mm — smaller, fewer city labels may be needed)
+- Each chart's visual weight is appropriate for its container size
+
+After validation, we move to 05.4.2 integration.
+
+=== SCOPE GUARDRAILS ===
+
+Do NOT:
+- Change the rendering logic unless dimensions clearly don't fit
+- Change the fake data
+- Add new chart types
+- Rewrite the existing sections
+
+Do:
+- Add new container divs with new IDs
+- Reuse existing renderers
+- Check that container CSS class combinations (wide, tall) produce the right dimensions
+
+Not committing. Visual validation on all 11 sections, then we move to 05.4.2.

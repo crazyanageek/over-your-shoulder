@@ -1,0 +1,40 @@
+Phase 05.4.1c — Simplify the map rendering to fix readability issues.
+
+Both map variants in the sandbox (§6 light 170×75mm and §11 full 85×65mm) have readability issues: city labels overlap arcs, city labels overlap each other, and the chip collides with nearby dots.
+
+Decision: remove all city labels from the map. Keep only:
+- Land / coastline / borders (unchanged)
+- Origin marker (black dot + halo ring)
+- "YOU ARE HERE" chip next to the origin
+- Destination dots (sized by count)
+- Arcs from origin to destinations
+
+The list of top cities is already displayed textually under the map in the PDF (via the "Everywhere your data went" block's two-column list). Repeating city names on the map is redundant.
+
+This matches the approach used in the badge map (/report/index.html) which has zero city labels and reads perfectly.
+
+=== IMPLEMENTATION ===
+
+In /report/charts-sandbox.html, locate the renderMap function. Find the block that adds city labels (likely a .forEach loop over top-3 cities calling svg += `<text ...>`). Remove it entirely.
+
+Keep:
+- Origin marker rendering
+- YOU ARE HERE chip rendering
+- Destination dot rendering
+- Arc rendering
+
+Remove:
+- City label text rendering (top-3 or whatever count)
+- Any related styling/padding adjustments that were added to accommodate labels
+
+After removal, verify both §6 and §11 render cleanly:
+- §6 light 170×75mm: sphere, land, coast, 8 dots, 8 arcs, origin + chip — no text labels
+- §11 full 85×65mm: same elements, scaled down — no text labels
+
+=== VERIFICATION ===
+
+Open the sandbox in Chrome. §6 and §11 should both look clean, no overlapping text, just the geographic shape with dots and arcs.
+
+Don't touch the other 9 sections.
+
+Not committing. After Jon validates the simplified maps, we move to 05.4.2 integration.

@@ -386,13 +386,15 @@ p {
   height: 65mm;
 }
 
-/* Light mode: 2 taller blocks side by side instead of 4 in a 2x2 grid. */
+/* Light mode: stacked full-width charts (vendors + hourly + map) + a
+   pedagogical-note row where the score curve would be in full mode. */
 .blocks-grid.light-mode {
-  grid-template-columns: 1fr 1fr;
+  grid-template-columns: 1fr;
+  row-gap: 6mm;
 }
 .block.block-tall .block-chart.chart-tall {
-  width: 85mm;
-  height: 95mm;
+  width: 170mm;
+  height: 75mm;
 }
 
 .pedagogical-note {

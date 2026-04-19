@@ -1,0 +1,18 @@
+All 05.4 phases validated visually. Commit the entire 05.4 arc (05.4.1 sandbox + 05.4.1b size variants + 05.4.1c map simplification + 05.4.2 integration) as one feature commit:
+
+git add .
+git commit -m "feat: phase-05.4 — 4 SVG charts integrated into PDF report
+
+- Standalone charts-sandbox.html for visual iteration (11 size variants)
+- 4 renderers lifted into full.js: vendors bar, hourly histogram, score evolution, enriched map
+- Each renderer accepts opts.W/H and scales internal constants via Sx/Sy/Sf
+- Map uses D3 Natural Earth + bundled topojson atlas (world-110m.js wrapper, no fetch needed)
+- Light mode renders 3 charts stacked (vendors + hourly + map) at 170×75mm
+- Full mode renders 4 charts in 2×2 grid (85×55mm standard, 85×65mm map)
+- Mono-vendor variant: full-width alarm-red band with cream centered label
+- Concentrated hourly variant: same 24-slot rhythm, fewer active bars
+- No city labels on the map (redundant with the two-column list below it)
+- Alarm red used as accent only (top vendor, peak hour, today's score point)
+- Empty-data fallbacks: skip vendors if empty, hourly base lines if no events, map without arcs if no destinations
+- Pedagogical note updated: 'One more chart will appear...' reflects score curve being the only deferred element in light mode"
+git push

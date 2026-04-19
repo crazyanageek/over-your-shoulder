@@ -1,0 +1,120 @@
+Phase 05.4.2 — Integrate the 4 charts from the sandbox into the real PDF report.
+
+The sandbox (/report/charts-sandbox.html) is validated. Lift its 4 renderer functions into full.js, replace the 4 placeholder <div> rectangles in full.html with real SVG output, wire to live chrome.storage.local data.
+
+=== RENDERERS TO LIFT ===
+
+From /report/charts-sandbox.html, copy these 4 functions into /report/full.js:
+- renderVendorsBar(containerEl, vendors, opts)
+- renderHourlyHistogram(containerEl, values, opts)
+- renderScoreEvolution(containerEl, history, opts)
+- renderMap(containerEl, origin, destinations, opts)
+
+Include the helper function buildArcSegments (antimeridian handling) and the palette constant C. The palette keys read from CSS custom properties; keep the hard-coded hex fallbacks from the sandbox so the export PNG path stays stable.
+
+The CITY_ANECDOTES, CITY_TIMEZONES, COUNTRY_COORDS, and HOST_GEO tables are already in full.js from 05.3 — reuse them, don't duplicate. The sandbox had local copies of COUNTRY_COORDS for testing; in full.js use the existing ones.
+
+Per the plan decision: keep buildArcSegments duplicated between report.js and full.js for now (don't extract to a shared module yet).
+
+=== DATA PREPARATION ===
+
+In full.js, after buildTokens() is called and the context is resolved, build 4 data objects for the charts:
+
+1. vendorsData:
+   From counters.byVendor, build array of { name, count, share } sorted descending by count. Apply the same OpenAI→ChatGPT remap used in buildVendorList.
+
+2. hourlyData:
+   Array of 24 values (0-23), count of events per hour of day. Iterate today's oys_events_YYYYMMDD entries (or all events if today-specific not computable), bucket by local hour.
+
+3. scoreHistoryData:
+   Direct pass-through of oys_score_history (already sorted asc by date).
+
+4. mapData:
+   origin = COUNTRY_COORDS[userCountry].coords (same as badge map)
+   destinations = array of { city, country, coords, count } derived from counters.byHost. For each host in byHost, look up HOST_GEO for city/country/coords, aggregate by unique city (sum counts if multiple hosts map to same city — e.g., openai.com + chatgpt.com both → San Francisco).
+
+=== INTEGRATION IN full.html ===
+
+Current state: 4 placeholder <div class="chart-placeholder"> rectangles with "To be implemented in phase 05.4" labels.
+
+Replace each placeholder with a real <div class="chart-container"> that matches its intended size:
+
+Block 1 (vendors):
+  <div class="chart-container" id="chart-vendors"></div>
+
+Block 2 (hourly):
+  <div class="chart-container" id="chart-hourly"></div>
+
+Block 3 (score):
+  <div class="chart-container" id="chart-score"></div>
+
+Block 4 (map):
+  <div class="chart-container tall" id="chart-map"></div>
+  (keep the "tall" modifier for 85×65mm in full mode)
+
+In CSS (full.css), the .chart-container and .chart-container.tall rules should already exist from 05.1. If they don't, define them with the same sizing as the sandbox.
+
+=== MODE FULL vs MODE LIGHT ===
+
+Per our plan: in LIGHT mode, show 3 charts enlarged (vendors + hourly + map), drop chart 3 (score curve) and replace with the pedagogical note.
+
+Full mode rendering (≥3 days AND ≥500 requests):
+- All 4 charts visible in the 2×2 grid
+- Call renderers with DIMS_FULL_STANDARD (321×208) for vendors/hourly/score
+- Call renderMap with DIMS_MAP_FULL (321×246, scale 60)
+
+Light mode rendering (< 3 days OR < 500 requests):
+- Only 3 charts visible stacked vertically: vendors + hourly + map
+- Pedagogical note replaces chart 3 (score)
+- Call renderers with DIMS_LIGHT (642×284) for vendors/hourly
+- Call renderMap with DIMS_MAP_LIGHT (642×284, scale 120)
+
+The resolveVariants mechanism already selects the mode. Extend the rendering logic so charts are called with the right DIMS preset based on the selected mode.
+
+Current light-mode pedagogical note says "Two more charts will appear on this page once your browser has had more conversations." With the new plan, only ONE chart is deferred (the score curve). Update the pedagogical note text to reflect this:
+
+  "One more chart will appear on this page once your browser has had more conversations with AI services: the evolution of your exposure score over time. This view unlocks after 3 days and 500 requests captured."
+
+(singular "one more chart", removed "distribution of activity across hours" since that's now shown, kept the "3 days and 500 requests" threshold language).
+
+=== FALLBACKS FOR EMPTY / SPARSE DATA ===
+
+Chart 1 (vendors): if counters.byVendor is empty, skip rendering and show nothing (should never happen in practice — if total > 0, there's at least one vendor).
+
+Chart 2 (hourly): if no events have been captured yet, render an empty 24-slot histogram with all bars at 1px base height (visual rhythm preserved, no peak highlight).
+
+Chart 4 (map): if destinations array is empty, render just the map base + origin + chip (no dots, no arcs).
+
+=== RENDER ORDER ===
+
+In initFullReport() or wherever the main render entry point is, after:
+1. buildTokens()
+2. replaceTokens()
+3. resolveVariants()
+
+Add:
+4. renderCharts(tokens, ctx, storage)
+
+renderCharts() selects the right DIMS based on ctx.mode, prepares the 4 data objects, and calls the 4 renderers.
+
+=== VERIFICATION ===
+
+After implementation:
+1. Hard-reload extension
+2. Open the full report via Full Report button on the badge
+3. Observe the 4 charts (or 3 in light mode) render with real data
+4. Console should show no errors
+5. Print to PDF — charts render in the exported PDF
+6. Jon's current data (1 day, all Anthropic, all US):
+   - Chart 1: mono-vendor alarm bar "Claude · 1,108 · 100%" in LIGHT size
+   - Chart 2: concentrated hourly with peak at 17h, in LIGHT size
+   - Chart 3: pedagogical note (deferred in light mode)
+   - Chart 4: Lausanne origin + 1 arc to SF + 1 big dot at SF, in LIGHT size
+
+Tell me:
+- Whether each chart renders correctly at its expected size
+- Any console errors
+- PDF export size before/after (was about X MB, now Y MB — charts may add weight)
+- Whether the layout inside the .blocks-grid (full mode) or the stacked layout (light mode) looks clean around the charts
+
+Do NOT commit yet. Jon validates visually in the real report, then we commit 05.4 as one cohesive feature (05.4.1 + 05.4.1b + 05.4.1c + 05.4.2).

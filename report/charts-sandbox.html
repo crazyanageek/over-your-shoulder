@@ -1,0 +1,582 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <title>OYS Charts Sandbox — Phase 05.4.1</title>
+    <link rel="stylesheet" href="fonts.css" />
+    <style>
+      :root {
+        --bg: #FAFAF7;
+        --ink: #0E0E0D;
+        --ink-muted: #6B6B6A;
+        --ink-soft: #A8A8A3;
+        --rule: #D9D6CC;
+        --alarm: #B91C1C;
+        --make-volume: #2B2B2A;
+        --make-cat: #BFA57A;
+        --make-geo: #B91C1C;
+        --make-cont: #3E5C66;
+        --font-display: "Fraunces", Georgia, serif;
+        --font-body: "Inter", -apple-system, system-ui, sans-serif;
+        --font-mono: "JetBrains Mono", Menlo, monospace;
+      }
+      *, *::before, *::after { box-sizing: border-box; }
+      html, body { margin: 0; padding: 0; }
+      body {
+        background: var(--bg);
+        color: var(--ink);
+        font-family: var(--font-body);
+        padding: 40px;
+        max-width: 180mm;
+        margin: 0 auto;
+      }
+      h1 {
+        font-family: var(--font-display);
+        font-style: italic;
+        font-weight: 500;
+        font-variation-settings: "opsz" 144;
+        font-size: 28pt;
+        line-height: 1.05;
+        letter-spacing: -0.02em;
+        margin: 0 0 10px;
+      }
+      .lede {
+        font-family: var(--font-body);
+        font-size: 10pt;
+        color: var(--ink-muted);
+        margin: 0 0 40px;
+        max-width: 60ch;
+      }
+      .chart-section {
+        margin-bottom: 60px;
+        padding-top: 20px;
+        border-top: 1px solid var(--rule);
+      }
+      .chart-label {
+        font-family: var(--font-body);
+        font-weight: 600;
+        text-transform: uppercase;
+        font-size: 10pt;
+        letter-spacing: 0.15em;
+        color: var(--ink-muted);
+        margin-bottom: 6px;
+      }
+      .chart-description {
+        font-family: var(--font-body);
+        font-size: 9pt;
+        color: var(--ink-soft);
+        margin-bottom: 18px;
+        font-style: italic;
+      }
+      .chart-container {
+        width: 85mm;
+        height: 55mm;
+        background: var(--bg);
+        overflow: visible;
+      }
+      .chart-container.tall { height: 65mm; }
+      .chart-container.wide {
+        width: 170mm;
+        height: 75mm;
+      }
+      .chart-container svg {
+        display: block;
+        width: 100%;
+        height: 100%;
+      }
+    </style>
+  </head>
+  <body>
+    <h1>OYS Charts Sandbox — Phase 05.4.1</h1>
+    <p class="lede">
+      Visual prototypes for the 4 charts before integration into full.html.
+      Fake data inlined below. Not wired to the extension — opens cleanly over
+      <code>file://</code>. Each container is sized to the exact mm footprint
+      the chart will have in the PDF.
+    </p>
+
+    <div class="chart-section">
+      <div class="chart-label">Chart 1 — Vendors bar (multi-vendor)</div>
+      <div class="chart-description">85×55mm container · 4 vendors · 45/30/15/10 distribution</div>
+      <div class="chart-container" id="c1-multi"></div>
+    </div>
+
+    <div class="chart-section">
+      <div class="chart-label">Chart 1 alternate — Vendors bar (mono-vendor)</div>
+      <div class="chart-description">85×55mm container · single vendor · full-width alarm bar</div>
+      <div class="chart-container" id="c1-mono"></div>
+    </div>
+
+    <div class="chart-section">
+      <div class="chart-label">Chart 2 — Hourly histogram (standard)</div>
+      <div class="chart-description">85×55mm container · 24 hours · peak at 17h (value 110)</div>
+      <div class="chart-container" id="c2-standard"></div>
+    </div>
+
+    <div class="chart-section">
+      <div class="chart-label">Chart 2 alternate — Hourly histogram (concentrated)</div>
+      <div class="chart-description">85×55mm container · activity concentrated 12h–16h</div>
+      <div class="chart-container" id="c2-concentrated"></div>
+    </div>
+
+    <div class="chart-section">
+      <div class="chart-label">Chart 3 — Score evolution curve</div>
+      <div class="chart-description">85×55mm container · 14 days · today (50) marked in alarm</div>
+      <div class="chart-container" id="c3-score"></div>
+    </div>
+
+    <div class="chart-section">
+      <div class="chart-label">Chart 4 — Enriched map (light mode)</div>
+      <div class="chart-description">170×75mm container (wide) · CH origin · 8 cities across 5 countries</div>
+      <div class="chart-container wide tall" id="c4-map"></div>
+    </div>
+
+    <div class="chart-section">
+      <div class="chart-label">Chart 1 light mode — Vendors bar (multi-vendor, enlarged)</div>
+      <div class="chart-description">170×75mm container — same data as Section 1, rescaled for light mode</div>
+      <div class="chart-container wide tall" id="c1-multi-light"></div>
+    </div>
+
+    <div class="chart-section">
+      <div class="chart-label">Chart 1 light mode — Vendors bar (mono-vendor, enlarged)</div>
+      <div class="chart-description">170×75mm container — same data as Section 2, rescaled for light mode</div>
+      <div class="chart-container wide tall" id="c1-mono-light"></div>
+    </div>
+
+    <div class="chart-section">
+      <div class="chart-label">Chart 2 light mode — Hourly histogram (standard, enlarged)</div>
+      <div class="chart-description">170×75mm container — same data as Section 3, rescaled for light mode</div>
+      <div class="chart-container wide tall" id="c2-standard-light"></div>
+    </div>
+
+    <div class="chart-section">
+      <div class="chart-label">Chart 2 light mode — Hourly histogram (concentrated, enlarged)</div>
+      <div class="chart-description">170×75mm container — same data as Section 4, rescaled for light mode</div>
+      <div class="chart-container wide tall" id="c2-concentrated-light"></div>
+    </div>
+
+    <div class="chart-section">
+      <div class="chart-label">Chart 4 full mode — Enriched map (grid-fit)</div>
+      <div class="chart-description">85×65mm container — same data as Section 6, rescaled for full mode grid</div>
+      <div class="chart-container tall" id="c4-map-full"></div>
+    </div>
+
+    <script src="lib/d3.min.js"></script>
+    <script src="lib/topojson-client.min.js"></script>
+    <script src="data/world-110m.js"></script>
+    <script>
+      /* =====================================================================
+         Fake data
+         ===================================================================== */
+      const FAKE_VENDORS_MULTI = [
+        { name: "ChatGPT",    count: 450, share: 45 },
+        { name: "Claude",     count: 300, share: 30 },
+        { name: "Gemini",     count: 150, share: 15 },
+        { name: "Perplexity", count: 100, share: 10 },
+      ];
+      const FAKE_VENDORS_MONO = [
+        { name: "Anthropic", count: 1108, share: 100 },
+      ];
+      const FAKE_HOURLY_STANDARD = [
+        0, 0, 0, 0, 0, 0, 0, 0, 12, 35, 85, 45,
+        30, 55, 95, 70, 40, 110, 60, 45, 20, 10, 5, 0,
+      ];
+      const FAKE_HOURLY_CONCENTRATED = [
+        0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+        45, 60, 80, 40, 20, 0, 0, 0, 0, 0, 0, 0,
+      ];
+      const FAKE_SCORE_HISTORY = [
+        { date: "2026-04-06", score: 28 },
+        { date: "2026-04-07", score: 32 },
+        { date: "2026-04-08", score: 35 },
+        { date: "2026-04-09", score: 38 },
+        { date: "2026-04-10", score: 40 },
+        { date: "2026-04-11", score: 42 },
+        { date: "2026-04-12", score: 39 },
+        { date: "2026-04-13", score: 41 },
+        { date: "2026-04-14", score: 44 },
+        { date: "2026-04-15", score: 46 },
+        { date: "2026-04-16", score: 45 },
+        { date: "2026-04-17", score: 43 },
+        { date: "2026-04-18", score: 47 },
+        { date: "2026-04-19", score: 50 },
+      ];
+      const FAKE_MAP_ORIGIN = [6.63, 46.52]; // Lausanne
+      const FAKE_MAP_DESTINATIONS = [
+        { city: "San Francisco", country: "US", coords: [-122.42, 37.77], count: 450 },
+        { city: "Mountain View", country: "US", coords: [-122.08, 37.39], count: 120 },
+        { city: "New York",      country: "US", coords: [-74.00, 40.71], count: 80 },
+        { city: "Paris",         country: "FR", coords: [2.35, 48.86],   count: 200 },
+        { city: "London",        country: "GB", coords: [-0.13, 51.51],  count: 100 },
+        { city: "Toronto",       country: "CA", coords: [-79.38, 43.65], count: 60 },
+        { city: "Hangzhou",      country: "CN", coords: [120.16, 30.26], count: 80 },
+        { city: "Tokyo",         country: "JP", coords: [139.69, 35.68], count: 20 },
+      ];
+
+      /* =====================================================================
+         Palette (hard-coded hex so SVG presentation attributes pick them up)
+         ===================================================================== */
+      const C = {
+        ink:        "#0E0E0D",
+        inkMuted:   "#6B6B6A",
+        inkSoft:    "#A8A8A3",
+        rule:       "#D9D6CC",
+        alarm:      "#B91C1C",
+        bg:         "#FAFAF7",
+        sphere:     "#F5F3EB",
+        land:       "#EEECE3",
+        coast:      "#6B6B6A",
+        zoneGreen:  "#F0F7F0",
+        zonePink:   "#FBF0F0",
+      };
+
+      /* =====================================================================
+         CHART 1 — Vendors horizontal bar
+         Default viewBox 321×208 matches 85×55mm. Passing opts.W/H re-scales
+         positional + font constants so the chart fills larger containers
+         (e.g., 642×284 for light mode 170×75mm) without letterboxing.
+         ===================================================================== */
+      function renderVendorsBar(containerEl, vendors, opts = {}) {
+        const W = opts.W ?? 321;
+        const H = opts.H ?? 208;
+        const Sx = W / 321;
+        const Sy = H / 208;
+        const Sf = Math.min(Sx, Sy); // font scale (avoid oversize in wide containers)
+
+        const NAME_W = 72 * Sx;
+        const VALUE_W = 72 * Sx;
+        const BAR_START = NAME_W + 6 * Sx;
+        const BAR_MAX = W - BAR_START - VALUE_W - 6 * Sx;
+        const BAR_H = 18 * Sy;
+        const ROW_GAP = 12 * Sy;
+        const FONT_BODY = 10 * Sf;
+        const FONT_MONO = 9 * Sf;
+        const FONT_MONO_MONO_VENDOR = 11 * Sf;
+
+        let svg = `<svg viewBox="0 0 ${W} ${H}" preserveAspectRatio="xMidYMid meet">`;
+
+        if (vendors.length === 1) {
+          // Mono-vendor: full-width alarm bar with centered cream label.
+          const v = vendors[0];
+          const fullW = W - 4 * Sx;
+          const bh = BAR_H * 2;
+          svg += `<rect x="${2 * Sx}" y="${H/2 - bh/2}" width="${fullW}" height="${bh}" fill="${C.alarm}" />`;
+          svg += `<text x="${W/2}" y="${H/2 + 5 * Sy}" fill="${C.bg}" font-family="var(--font-body)" font-size="${FONT_MONO_MONO_VENDOR}" font-weight="500" text-anchor="middle" letter-spacing="0.03em">${v.name} · ${v.count.toLocaleString("en-US")} requests · ${v.share}%</text>`;
+          svg += `</svg>`;
+          containerEl.innerHTML = svg;
+          return;
+        }
+
+        const TOTAL_ROWS_H = vendors.length * BAR_H + (vendors.length - 1) * ROW_GAP;
+        const TOP = (H - TOTAL_ROWS_H) / 2;
+
+        vendors.forEach((v, i) => {
+          const y = TOP + i * (BAR_H + ROW_GAP);
+          const midY = y + BAR_H / 2 + 3 * Sy;
+          const barW = Math.max(2 * Sx, (v.share / 100) * BAR_MAX);
+          const fill = i === 0 ? C.alarm : C.inkMuted;
+          const countFmt = v.count.toLocaleString("en-US");
+
+          svg += `<text x="0" y="${midY}" font-family="var(--font-body)" font-size="${FONT_BODY}" fill="${C.ink}">${v.name}</text>`;
+          svg += `<rect x="${BAR_START}" y="${y}" width="${barW}" height="${BAR_H}" fill="${fill}" />`;
+          svg += `<text x="${BAR_START + barW + 6 * Sx}" y="${midY - 1}" font-family="var(--font-mono)" font-size="${FONT_MONO}" fill="${C.inkMuted}">${countFmt} · ${v.share}%</text>`;
+        });
+
+        svg += `</svg>`;
+        containerEl.innerHTML = svg;
+      }
+
+      /* =====================================================================
+         CHART 2 — Hourly histogram (24 bars)
+         ===================================================================== */
+      function renderHourlyHistogram(containerEl, values, opts = {}) {
+        const W = opts.W ?? 321;
+        const H = opts.H ?? 208;
+        const Sx = W / 321;
+        const Sy = H / 208;
+        const Sf = Math.min(Sx, Sy);
+
+        const PAD_L = 6 * Sx, PAD_R = 6 * Sx;
+        const PAD_T = 24 * Sy, PAD_B = 22 * Sy;
+        const CHART_W = W - PAD_L - PAD_R;
+        const CHART_H = H - PAD_T - PAD_B;
+        const SLOT = CHART_W / 24;
+        const BAR_W = SLOT - 1.5 * Sx;
+        const FONT_PEAK = 9 * Sf;
+        const FONT_TICK = 8 * Sf;
+
+        const max = Math.max(...values);
+        const peakIdx = max > 0 ? values.indexOf(max) : -1;
+
+        let svg = `<svg viewBox="0 0 ${W} ${H}" preserveAspectRatio="xMidYMid meet">`;
+
+        values.forEach((v, i) => {
+          const x = PAD_L + i * SLOT + 0.75 * Sx;
+          if (v === 0) {
+            // 1px-ish grid line at base to keep the 24-slot rhythm visible
+            svg += `<rect x="${x}" y="${PAD_T + CHART_H - Sy}" width="${BAR_W}" height="${Sy}" fill="${C.inkSoft}" opacity="0.6" />`;
+          } else {
+            const h = (v / max) * CHART_H;
+            const y = PAD_T + CHART_H - h;
+            const fill = i === peakIdx ? C.alarm : C.inkMuted;
+            svg += `<rect x="${x}" y="${y}" width="${BAR_W}" height="${h}" fill="${fill}" />`;
+          }
+        });
+
+        // Peak value label above peak bar
+        if (peakIdx >= 0) {
+          const peakX = PAD_L + peakIdx * SLOT + BAR_W / 2 + 0.75 * Sx;
+          const peakY = PAD_T - 6 * Sy;
+          svg += `<text x="${peakX}" y="${peakY}" font-family="var(--font-mono)" font-size="${FONT_PEAK}" fill="${C.alarm}" text-anchor="middle">${max}</text>`;
+        }
+
+        // X-axis ticks at 0, 6, 12, 18
+        [0, 6, 12, 18].forEach((hr) => {
+          const x = PAD_L + hr * SLOT + BAR_W / 2 + 0.75 * Sx;
+          svg += `<text x="${x}" y="${PAD_T + CHART_H + 14 * Sy}" font-family="var(--font-mono)" font-size="${FONT_TICK}" fill="${C.inkSoft}" text-anchor="middle">${hr}h</text>`;
+        });
+
+        svg += `</svg>`;
+        containerEl.innerHTML = svg;
+      }
+
+      /* =====================================================================
+         CHART 3 — Score evolution line
+         ===================================================================== */
+      function formatShortDate(iso) {
+        const months = ["Jan","Feb","Mar","Apr","May","Jun","Jul","Aug","Sep","Oct","Nov","Dec"];
+        const [y, m, d] = iso.split("-").map(Number);
+        return `${months[m - 1]} ${d}`;
+      }
+
+      function renderScoreEvolution(containerEl, history, opts = {}) {
+        const W = opts.W ?? 321;
+        const H = opts.H ?? 208;
+        const Sx = W / 321;
+        const Sy = H / 208;
+        const Sf = Math.min(Sx, Sy);
+
+        const PAD_L = 10 * Sx;
+        const PAD_R = 34 * Sx;
+        const PAD_T = 18 * Sy;
+        const PAD_B = 22 * Sy;
+        const CHART_W = W - PAD_L - PAD_R;
+        const CHART_H = H - PAD_T - PAD_B;
+        const FONT_TODAY = 9 * Sf;
+        const FONT_AVG = 7 * Sf;
+        const FONT_DATE = 8 * Sf;
+
+        const n = history.length;
+        if (n === 0) { containerEl.innerHTML = ""; return; }
+
+        const xAt = (i) => PAD_L + (n === 1 ? CHART_W / 2 : (i * CHART_W) / (n - 1));
+        const yAt = (score) => PAD_T + CHART_H - (score / 100) * CHART_H;
+
+        const avg = history.reduce((s, e) => s + e.score, 0) / n;
+
+        let svg = `<svg viewBox="0 0 ${W} ${H}" preserveAspectRatio="xMidYMid meet">`;
+
+        // Zone fills — 0–30 green, 60–100 pink (30–60 neutral, no fill)
+        svg += `<rect x="${PAD_L}" y="${yAt(30)}" width="${CHART_W}" height="${yAt(0) - yAt(30)}" fill="${C.zoneGreen}" opacity="0.5" />`;
+        svg += `<rect x="${PAD_L}" y="${yAt(100)}" width="${CHART_W}" height="${yAt(60) - yAt(100)}" fill="${C.zonePink}" opacity="0.5" />`;
+
+        // Average dashed line
+        const avgY = yAt(avg);
+        svg += `<line x1="${PAD_L}" y1="${avgY}" x2="${PAD_L + CHART_W}" y2="${avgY}" stroke="${C.inkSoft}" stroke-width="${0.5 * Sf}" stroke-dasharray="${3 * Sf},${3 * Sf}" />`;
+        svg += `<text x="${PAD_L + CHART_W + 3 * Sx}" y="${avgY + 3 * Sy}" font-family="var(--font-mono)" font-size="${FONT_AVG}" fill="${C.inkSoft}">avg ${Math.round(avg)}</text>`;
+
+        // Polyline
+        const points = history.map((e, i) => `${xAt(i)},${yAt(e.score)}`).join(" ");
+        svg += `<polyline points="${points}" fill="none" stroke="${C.ink}" stroke-width="${1.5 * Sf}" stroke-linejoin="round" stroke-linecap="round" />`;
+
+        // Data points
+        history.forEach((e, i) => {
+          const isToday = i === n - 1;
+          const r = (isToday ? 4 : 2) * Sf;
+          const fill = isToday ? C.alarm : C.inkMuted;
+          svg += `<circle cx="${xAt(i)}" cy="${yAt(e.score)}" r="${r}" fill="${fill}" />`;
+        });
+
+        // Today label
+        const lastX = xAt(n - 1), lastY = yAt(history[n - 1].score);
+        svg += `<text x="${lastX + 6 * Sx}" y="${lastY - 5 * Sy}" font-family="var(--font-mono)" font-size="${FONT_TODAY}" fill="${C.alarm}" font-weight="500">${history[n - 1].score}</text>`;
+
+        // X-axis date labels (first + last only)
+        const dateY = PAD_T + CHART_H + 14 * Sy;
+        svg += `<text x="${PAD_L}" y="${dateY}" font-family="var(--font-mono)" font-size="${FONT_DATE}" fill="${C.inkSoft}">${formatShortDate(history[0].date)}</text>`;
+        svg += `<text x="${PAD_L + CHART_W}" y="${dateY}" font-family="var(--font-mono)" font-size="${FONT_DATE}" fill="${C.inkSoft}" text-anchor="end">${formatShortDate(history[n - 1].date)}</text>`;
+
+        svg += `</svg>`;
+        containerEl.innerHTML = svg;
+      }
+
+      /* =====================================================================
+         CHART 4 — Enriched map (D3 + topojson)
+         Reuses the antimeridian-safe arc logic + Natural Earth projection
+         from /report/report.js renderMap().
+         ===================================================================== */
+      function buildArcSegmentsSb(origin, dest, projection, Sf = 1) {
+        const olon = origin[0], olat = origin[1];
+        const dlon = dest[0],   dlat = dest[1];
+        const crosses = Math.abs(dlon - olon) > 180;
+        const STEPS = 48;
+        const MAX_LIFT = 20 * Sf;
+
+        if (!crosses) {
+          const interp = d3.geoInterpolate(origin, dest);
+          const pts = [];
+          for (let i = 0; i <= STEPS; i++) {
+            const t = i / STEPS;
+            const p = interp(t);
+            const lift = Math.sin(t * Math.PI) * MAX_LIFT;
+            const [px, py] = projection(p);
+            pts.push([px, py - lift]);
+          }
+          return [pts];
+        }
+        const east = olon > dlon;
+        const edgeOut = east ? 180 : -180;
+        const edgeIn  = east ? -180 : 180;
+        const lonDist1 = east ? 180 - olon : olon + 180;
+        const lonDist2 = east ? dlon + 180 : 180 - dlon;
+        const tEdge = lonDist1 / (lonDist1 + lonDist2);
+        const latEdge = olat + (dlat - olat) * tEdge;
+        const linear = (fLon, fLat, tLon, tLat, tStart, tEnd, steps) => {
+          const pts = [];
+          for (let i = 0; i <= steps; i++) {
+            const local = i / steps;
+            const lon = fLon + (tLon - fLon) * local;
+            const lat = fLat + (tLat - fLat) * local;
+            const globalT = tStart + (tEnd - tStart) * local;
+            const lift = Math.sin(globalT * Math.PI) * MAX_LIFT;
+            const [px, py] = projection([lon, lat]);
+            pts.push([px, py - lift]);
+          }
+          return pts;
+        };
+        const s1 = Math.max(12, Math.round(STEPS * tEdge));
+        const s2 = Math.max(12, Math.round(STEPS * (1 - tEdge)));
+        return [
+          linear(olon, olat, edgeOut, latEdge, 0, tEdge, s1),
+          linear(edgeIn, latEdge, dlon, dlat, tEdge, 1, s2),
+        ];
+      }
+
+      function renderMap(containerEl, origin, destinations, opts = {}) {
+        const W = opts.W ?? 642;
+        const H = opts.H ?? 284;
+        const projScale = opts.scale ?? 120;
+        const center = opts.center ?? [-10, 20];
+        const Sf = Math.min(W / 642, H / 284); // unified scale factor for strokes/fonts
+
+        containerEl.innerHTML = "";
+        const svg = d3.select(containerEl).append("svg")
+          .attr("viewBox", `0 0 ${W} ${H}`)
+          .attr("preserveAspectRatio", "xMidYMid meet");
+
+        const projection = d3.geoNaturalEarth1()
+          .scale(projScale)
+          .center(center)
+          .translate([W / 2, H / 2]);
+        const path = d3.geoPath(projection);
+
+        svg.append("path").attr("d", path({ type: "Sphere" }))
+          .attr("fill", C.sphere).attr("stroke", "none");
+        svg.append("path").attr("d", path(d3.geoGraticule().step([30, 30])()))
+          .attr("fill", "none").attr("stroke", C.rule).attr("stroke-width", 0.3 * Sf)
+          .attr("stroke-dasharray", `${1 * Sf} ${2 * Sf}`).attr("opacity", 0.35);
+
+        const world = window.OYS_WORLD_ATLAS;
+        if (world) {
+          const countries = topojson.feature(world, world.objects.countries);
+          svg.append("g").selectAll("path").data(countries.features).enter().append("path")
+            .attr("d", path).attr("fill", C.land).attr("stroke", "none");
+          svg.append("path")
+            .attr("d", path(topojson.mesh(world, world.objects.countries, (a, b) => a !== b)))
+            .attr("fill", "none").attr("stroke", C.rule).attr("stroke-width", 0.4 * Sf).attr("opacity", 0.9);
+          svg.append("path")
+            .attr("d", path(topojson.mesh(world, world.objects.countries, (a, b) => a === b)))
+            .attr("fill", "none").attr("stroke", C.coast).attr("stroke-width", 0.7 * Sf);
+        }
+
+        const [ox, oy] = projection(origin);
+
+        // Arcs — thin grey, no red
+        const arcLayer = svg.append("g");
+        const line = d3.line().curve(d3.curveBasis);
+        destinations.forEach((d) => {
+          for (const seg of buildArcSegmentsSb(origin, d.coords, projection, Sf)) {
+            arcLayer.append("path").attr("d", line(seg))
+              .attr("fill", "none").attr("stroke", C.inkMuted)
+              .attr("stroke-width", 0.6 * Sf).attr("opacity", 0.5).attr("stroke-linecap", "round");
+          }
+        });
+
+        // Destination dots — r scales 2..6 by count, all × Sf so small-container version stays readable
+        const minC = Math.min(...destinations.map((d) => d.count));
+        const maxC = Math.max(...destinations.map((d) => d.count));
+        const rFor = (c) =>
+          (maxC === minC ? 3 : 2 + ((c - minC) / (maxC - minC)) * 4) * Sf;
+        destinations.forEach((d) => {
+          const [dx, dy] = projection(d.coords);
+          svg.append("circle")
+            .attr("cx", dx).attr("cy", dy).attr("r", rFor(d.count))
+            .attr("fill", C.inkMuted).attr("stroke", C.bg).attr("stroke-width", 0.8 * Sf);
+        });
+
+        // City labels intentionally omitted — the "Everywhere your data went"
+        // block's two-column list already shows city names with counts.
+        // Origin — halo rings + solid dot
+        svg.append("circle").attr("cx", ox).attr("cy", oy).attr("r", 10 * Sf)
+          .attr("fill", "none").attr("stroke", C.ink).attr("stroke-width", 1 * Sf).attr("opacity", 0.35);
+        svg.append("circle").attr("cx", ox).attr("cy", oy).attr("r", 5 * Sf)
+          .attr("fill", "none").attr("stroke", C.ink).attr("stroke-width", 1 * Sf).attr("opacity", 0.35);
+        svg.append("circle").attr("cx", ox).attr("cy", oy).attr("r", 3 * Sf)
+          .attr("fill", C.ink).attr("stroke", C.bg).attr("stroke-width", 1.5 * Sf);
+
+        // YOU ARE HERE label
+        const labelW = 78 * Sf, labelH = 13 * Sf;
+        const lx = ox - labelW / 2, ly = oy + 14 * Sf;
+        svg.append("rect").attr("x", lx).attr("y", ly).attr("width", labelW).attr("height", labelH)
+          .attr("fill", C.bg).attr("stroke", C.ink).attr("stroke-width", 0.4 * Sf);
+        svg.append("text").attr("x", ox).attr("y", ly + 9 * Sf).attr("text-anchor", "middle")
+          .attr("font-family", "var(--font-mono)").attr("font-size", 8.5 * Sf)
+          .attr("font-weight", 600).attr("letter-spacing", 0.8 * Sf)
+          .attr("fill", C.ink).text("YOU ARE HERE");
+      }
+
+      /* =====================================================================
+         Mount everything
+         ===================================================================== */
+      // Container dimensions the chart will see in the PDF:
+      //   85×55mm  → viewBox 321×208   (full mode, charts 1/2/3)
+      //   85×65mm  → viewBox 321×246   (full mode, chart 4 map)
+      //   170×75mm → viewBox 642×284   (light mode, all charts)
+      const DIMS_FULL_STANDARD = { W: 321, H: 208 };
+      const DIMS_LIGHT = { W: 642, H: 284 };
+      const DIMS_MAP_LIGHT = { W: 642, H: 284, scale: 120 };
+      const DIMS_MAP_FULL  = { W: 321, H: 246, scale: 60 };
+
+      // Full-mode (existing sections)
+      renderVendorsBar(document.getElementById("c1-multi"), FAKE_VENDORS_MULTI, DIMS_FULL_STANDARD);
+      renderVendorsBar(document.getElementById("c1-mono"), FAKE_VENDORS_MONO, DIMS_FULL_STANDARD);
+      renderHourlyHistogram(document.getElementById("c2-standard"), FAKE_HOURLY_STANDARD, DIMS_FULL_STANDARD);
+      renderHourlyHistogram(document.getElementById("c2-concentrated"), FAKE_HOURLY_CONCENTRATED, DIMS_FULL_STANDARD);
+      renderScoreEvolution(document.getElementById("c3-score"), FAKE_SCORE_HISTORY, DIMS_FULL_STANDARD);
+      renderMap(document.getElementById("c4-map"), FAKE_MAP_ORIGIN, FAKE_MAP_DESTINATIONS, DIMS_MAP_LIGHT);
+
+      // Light-mode variants (new sections 7-10) — 170×75mm, rescaled renderers
+      renderVendorsBar(document.getElementById("c1-multi-light"), FAKE_VENDORS_MULTI, DIMS_LIGHT);
+      renderVendorsBar(document.getElementById("c1-mono-light"), FAKE_VENDORS_MONO, DIMS_LIGHT);
+      renderHourlyHistogram(document.getElementById("c2-standard-light"), FAKE_HOURLY_STANDARD, DIMS_LIGHT);
+      renderHourlyHistogram(document.getElementById("c2-concentrated-light"), FAKE_HOURLY_CONCENTRATED, DIMS_LIGHT);
+
+      // Full-mode map at 85×65mm (section 11) — smaller viewBox + smaller projection scale
+      renderMap(document.getElementById("c4-map-full"), FAKE_MAP_ORIGIN, FAKE_MAP_DESTINATIONS, DIMS_MAP_FULL);
+
+      if (!window.OYS_WORLD_ATLAS) {
+        console.warn("OYS_WORLD_ATLAS not loaded — map renders without land outlines.");
+      }
+    </script>
+  </body>
+</html>

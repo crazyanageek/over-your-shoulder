@@ -69,9 +69,7 @@
 
             <div class="block">
               <h3 class="h3">Who received your data</h3>
-              <div class="block-chart chart-vendors">
-                <span class="block-chart-label">Chart: Vendors bar chart<br />(to be implemented in phase 05.4)</span>
-              </div>
+              <div class="block-chart chart-vendors" id="chart-vendors"></div>
               <div data-variant-group="vendor-legend">
                 <p class="block-legend" data-variant-if="mono">All your AI activity went to a single service. {vendorName} now holds a complete picture of what you asked about today.</p>
                 <p class="block-legend" data-variant-if="multi">{vendorCount} services received your browser's requests today. {topVendorName} accounts for {topVendorShare}% of the total, followed by {secondVendorName} at {secondVendorShare}%.</p>
@@ -84,9 +82,7 @@ Top vs. second vendor ratio    {topToSecondRatio}
 
             <div class="block">
               <h3 class="h3">When your browser was talking</h3>
-              <div class="block-chart chart-hourly">
-                <span class="block-chart-label">Chart: Hourly histogram<br />(to be implemented in phase 05.4)</span>
-              </div>
+              <div class="block-chart chart-hourly" id="chart-hourly"></div>
               <div data-variant-group="hourly-legend">
                 <p class="block-legend" data-variant-if="standard">Your browser's busiest hour today was around {peakHour}, with {peakHourRequests} requests. It was quiet during {idleHours} hours of the day.</p>
                 <p class="block-legend" data-variant-if="concentrated">Your browser's activity concentrated between {startHour} and {endHour}, with its busiest moment at {peakHour}.</p>
@@ -102,9 +98,7 @@ Daytime / nighttime ratio      {dayNightRatio}
 
             <div class="block">
               <h3 class="h3">How your score has moved</h3>
-              <div class="block-chart chart-score">
-                <span class="block-chart-label">Chart: Score evolution curve<br />(to be implemented in phase 05.4)</span>
-              </div>
+              <div class="block-chart chart-score" id="chart-score"></div>
               <p class="block-legend">Your score has moved between {minScore} and {maxScore} over the past {daysObserved} days. Today it sits at {todayScore}, {todayVsAvg}.</p>
               <div class="block-microlist">Today's score                  {todayScore} / 100
 Average over period            {avgScore}
@@ -116,9 +110,7 @@ Trend                          {trendLabel}
 
             <div class="block">
               <h3 class="h3">Everywhere your data went</h3>
-              <div class="block-chart chart-map">
-                <span class="block-chart-label">Chart: Enriched world map<br />(to be implemented in phase 05.4)</span>
-              </div>
+              <div class="block-chart chart-map" id="chart-map"></div>
               <p class="block-legend">Your data reached {cityCount} cities across {countryCount} countries today. The farthest destination was {farthestCity}, at roughly {distanceKm} kilometers.</p>
               <div class="block-microlist">Cities contacted                    {cityCount}
 Countries contacted                 {countryCount}
@@ -132,14 +124,12 @@ Countries outside your home         {foreignCountryCount}
           </div>
         </div>
 
-        <!-- LIGHT MODE: 2 blocks + pedagogical note -->
+        <!-- LIGHT MODE: 3 stacked charts (vendors + hourly + map) + pedagogical note where the score curve would be -->
         <div data-variant-if="light">
           <div class="blocks-grid light-mode">
             <div class="block block-tall">
               <h3 class="h3">Who received your data</h3>
-              <div class="block-chart chart-vendors chart-tall">
-                <span class="block-chart-label">Chart: Vendors bar chart<br />(to be implemented in phase 05.4)</span>
-              </div>
+              <div class="block-chart chart-vendors chart-tall" id="chart-vendors"></div>
               <div data-variant-group="vendor-legend">
                 <p class="block-legend" data-variant-if="mono">All your AI activity went to a single service. {vendorName} now holds a complete picture of what you asked about today.</p>
                 <p class="block-legend" data-variant-if="multi">{vendorCount} services received your browser's requests today. {topVendorName} accounts for {topVendorShare}% of the total, followed by {secondVendorName} at {secondVendorShare}%.</p>
@@ -151,21 +141,34 @@ Top vs. second vendor ratio    {topToSecondRatio}
             </div>
 
             <div class="block block-tall">
-              <h3 class="h3">Everywhere your data went</h3>
-              <div class="block-chart chart-map chart-tall">
-                <span class="block-chart-label">Chart: Enriched world map<br />(to be implemented in phase 05.4)</span>
+              <h3 class="h3">When your browser was talking</h3>
+              <div class="block-chart chart-hourly chart-tall" id="chart-hourly"></div>
+              <div data-variant-group="hourly-legend">
+                <p class="block-legend" data-variant-if="standard">Your browser's busiest hour today was around {peakHour}, with {peakHourRequests} requests. It was quiet during {idleHours} hours of the day.</p>
+                <p class="block-legend" data-variant-if="concentrated">Your browser's activity concentrated between {startHour} and {endHour}, with its busiest moment at {peakHour}.</p>
               </div>
+              <div class="block-microlist">First activity of the day      {firstActivityTime}
+Last activity of the day       {lastActivityTime}
+Peak hour                      {peakHour}
+Peak hour volume               {peakHourRequests}
+Quiet hours                    {idleHours}
+</div>
+            </div>
+
+            <div class="pedagogical-note">
+              <p>One more chart will appear on this page once your browser has had more conversations with AI services: the evolution of your exposure score over time. This view unlocks after 3 days and 500 requests captured.</p>
+              <p class="pedagogical-state">Current state: {daysObserved} days observed, {totalRequests} requests captured.</p>
+            </div>
+
+            <div class="block block-tall">
+              <h3 class="h3">Everywhere your data went</h3>
+              <div class="block-chart chart-map chart-tall" id="chart-map"></div>
               <p class="block-legend">Your data reached {cityCount} cities across {countryCount} countries today. The farthest destination was {farthestCity}, at roughly {distanceKm} kilometers.</p>
               <div class="block-microlist">Cities contacted               {cityCount}
 Countries contacted            {countryCount}
 Cross-border traffic           {percentCrossingBorders}%
 </div>
             </div>
-          </div>
-
-          <div class="pedagogical-note">
-            <p>Two more charts will appear on this page once your browser has had more conversations with AI services. A distribution of its activity across the hours of the day, and the evolution of your exposure score over time. This report will unlock the full view after 3 days and 500 requests captured. None of this data leaves your device — OpenAI, Google, and the others already have their copy.</p>
-            <p class="pedagogical-state">Current state: {daysObserved} days observed, {totalRequests} requests captured.</p>
           </div>
         </div>
       </div>
@@ -392,6 +395,9 @@ Current pace          {continuityTrend}
       <div class="page-number">08 / 08</div>
     </section>
 
+    <script src="lib/d3.min.js"></script>
+    <script src="lib/topojson-client.min.js"></script>
+    <script src="data/world-110m.js"></script>
     <script type="module" src="full.js"></script>
   </body>
 </html>

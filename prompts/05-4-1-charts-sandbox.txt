@@ -1,0 +1,272 @@
+Phase 05.4.1 — Build a standalone sandbox HTML file to prototype and validate the 4 charts before integration.
+
+=== PRELIMINARY STEP — VERIFY ACTUAL CHART DIMENSIONS ===
+
+Before writing any chart code, grep /report/full.css for the EXACT dimensions of the 4 chart placeholders currently in full.html. Read:
+- The dimensions of .chart-placeholder or equivalent selectors in full-mode (probably 85×55mm and 85×65mm)
+- The dimensions in light-mode (block-tall, chart-tall selectors — these are the larger variants used when only 2 charts render)
+
+Report those dimensions in a table at the top of your response:
+  Full mode vendor/hourly/score: WIDTH × HEIGHT
+  Full mode map: WIDTH × HEIGHT
+  Light mode vendor: WIDTH × HEIGHT
+  Light mode map: WIDTH × HEIGHT
+
+Use THESE dimensions (not my earlier guesses) as the .chart-container sizes in the sandbox. The sandbox must match exactly what the PDF will show, so that visual validation here transfers directly to the integrated result.
+
+If the CSS has distinct dimensions for full and light modes, render BOTH variants in the sandbox for each chart that has different sizing.
+
+=== GOAL ===
+
+Create /report/charts-sandbox.html — a self-contained HTML file, NOT linked from anywhere in the extension. It serves as a visual prototype to iterate on the 4 chart designs before integrating them into full.html in phase 05.4.2.
+The sandbox loads fake data that simulates realistic user scenarios. Jon reviews the charts visually, we iterate until they look right, then move to integration.
+
+=== FILE STRUCTURE ===
+
+  /report/charts-sandbox.html — single HTML file
+  
+The file imports the existing fonts (fonts.css) and inherits the color tokens from the existing styles.css palette, but defines its own layout for showcasing all 4 charts on one long scrollable page.
+
+Required imports at the top:
+  <link rel="stylesheet" href="fonts.css">
+  <style>
+    /* Inline: re-declare the color tokens from styles.css */
+    :root {
+      --bg: #FAFAF7;
+      --ink: #0E0E0D;
+      --ink-muted: #6B6B6A;
+      --ink-soft: #A8A8A3;
+      --rule: #D9D6CC;
+      --alarm: #B91C1C;
+      --make-volume: #2B2B2A;
+      --make-cat: #BFA57A;
+      --make-geo: #B91C1C;
+      --make-cont: #3E5C66;
+      
+      --font-display: "Fraunces", Georgia, serif;
+      --font-body: "Inter", -apple-system, system-ui, sans-serif;
+      --font-mono: "JetBrains Mono", Menlo, monospace;
+    }
+    /* Sandbox-specific layout */
+    body {
+      background: var(--bg);
+      color: var(--ink);
+      font-family: var(--font-body);
+      padding: 40px;
+      max-width: 180mm;
+      margin: 0 auto;
+    }
+    .chart-section {
+      margin-bottom: 80px;
+      padding-top: 20px;
+      border-top: 1px solid var(--rule);
+    }
+    .chart-label {
+      font-family: var(--font-body);
+      font-weight: 600;
+      text-transform: uppercase;
+      font-size: 10pt;
+      letter-spacing: 0.15em;
+      color: var(--ink-muted);
+      margin-bottom: 10px;
+    }
+    .chart-description {
+      font-family: var(--font-body);
+      font-size: 9pt;
+      color: var(--ink-soft);
+      margin-bottom: 20px;
+      font-style: italic;
+    }
+    /* Each chart gets a container of the size it will have in the PDF */
+    .chart-container {
+      width: 85mm;
+      height: 55mm;
+      background: var(--bg);
+    }
+    .chart-container.tall {
+      height: 65mm;  /* for the map */
+    }
+    .chart-container.wide {
+      width: 170mm;  /* for light-mode full-width variant */
+      height: 75mm;
+    }
+  </style>
+
+=== DESIGN PRINCIPLES (apply to all 4 charts) ===
+
+Option C aesthetic — mostly monochrome, alarm red (#B91C1C) used as ACCENT only to highlight the most critical value in each chart.
+
+Principle 1: Editorial sobriety
+- Black/grey bars and lines by default
+- Thin strokes (0.5-1.5px)
+- No drop shadows, no gradients, no animations
+- Fraunces italic for chart titles, Inter regular for labels
+
+Principle 2: Minimum annotations
+- Axis labels: only if essential for comprehension
+- Value labels on bars: only on the top-ranked value, or on the "alarm" value
+- No legend unless multiple series need disambiguation
+- Let the chart shape communicate; the micro-list below provides precise numbers
+
+Principle 3: Alarm red as accent
+- Use --alarm (#B91C1C) for the SINGLE most critical value in each chart:
+  - Vendors bar: the top vendor
+  - Hourly histogram: the peak hour bar
+  - Score evolution: today's point (marker at the end of the line)
+  - Map: the origin (user) marker stays --ink, but the arcs remain grey (no red arcs — too loud)
+- All other bars/lines/points: --ink-muted or --ink-soft
+
+=== THE 4 CHARTS ===
+
+--- CHART 1 — Vendors bar (85×55mm) ---
+
+Horizontal bar chart, multi-vendor case.
+
+Fake data scenario (show 4 vendors with realistic distribution):
+  [
+    { name: "ChatGPT",    count: 450, share: 45 },
+    { name: "Claude",     count: 300, share: 30 },
+    { name: "Gemini",     count: 150, share: 15 },
+    { name: "Perplexity", count: 100, share: 10 }
+  ]
+
+Layout:
+- Each bar occupies a horizontal row
+- Vendor name on the left (Inter 10pt, --ink)
+- Bar extends horizontally, width proportional to share
+- Value label at the right end of each bar: "450 · 45%" (Mono 9pt)
+- Top bar (ChatGPT): filled with --alarm
+- Other bars: filled with --ink-muted
+- Bar height ~8-10mm with ~3-4mm gap between
+- NO x-axis, NO y-axis lines — just the bars on white background
+
+Also render an ALTERNATE mono-vendor case in a separate sandbox section:
+- Single bar, full width, filled --alarm
+- Center label in white: "Anthropic · 1,108 requests · 100%"
+
+--- CHART 2 — Hourly histogram (85×55mm) ---
+
+24-bar histogram showing request distribution across hours 0-23.
+
+Fake data scenario 1 (standard, ≥6 active hours):
+  Array of 24 values. Non-zero hours: 8-22 with peaks at 10, 14, 17.
+  Values: [0,0,0,0,0,0,0,0, 12, 35, 85, 45, 30, 55, 95, 70, 40, 110, 60, 45, 20, 10, 5, 0]
+
+Layout:
+- 24 vertical bars, each representing one hour (0-23)
+- Bar width calculated to fit all 24 in 85mm minus padding
+- Bar height proportional to value (peak hour = full chart height)
+- Peak hour (index 17, value 110): filled --alarm
+- Other bars: filled --ink-muted
+- Zero-value hours: show as a 1px high line at the base (--ink-soft) to maintain the 24-position grid
+- X-axis: minimal tick labels at hours 0, 6, 12, 18 (not all 24). Mono 8pt.
+- Value label above the peak bar: "110" (Mono 9pt, --alarm)
+- NO y-axis
+
+Also render an ALTERNATE concentrated case:
+  Array of 24 values, non-zero only 12-16 (5 hours).
+  [0,0,0,0,0,0,0,0,0,0,0,0, 45, 60, 80, 40, 20, 0,0,0,0,0,0,0]
+  Same styling.
+
+--- CHART 3 — Score evolution curve (85×55mm) ---
+
+Line chart showing the user's score across observed days.
+
+Fake data scenario (14 days of history):
+  [
+    { date: "2026-04-06", score: 28 },
+    { date: "2026-04-07", score: 32 },
+    { date: "2026-04-08", score: 35 },
+    { date: "2026-04-09", score: 38 },
+    { date: "2026-04-10", score: 40 },
+    { date: "2026-04-11", score: 42 },
+    { date: "2026-04-12", score: 39 },
+    { date: "2026-04-13", score: 41 },
+    { date: "2026-04-14", score: 44 },
+    { date: "2026-04-15", score: 46 },
+    { date: "2026-04-16", score: 45 },
+    { date: "2026-04-17", score: 43 },
+    { date: "2026-04-18", score: 47 },
+    { date: "2026-04-19", score: 50 }
+  ]
+
+Layout:
+- Y-axis: 0 to 100 (score range)
+- Background zones (subtle fills):
+  - 0-30: very light green (#F0F7F0 or similar, at 30% opacity — barely visible)
+  - 30-60: neutral (no fill)
+  - 60-100: very light pink (#FBF0F0 or similar, at 30% opacity)
+- Average line: horizontal dashed line at avg value (e.g., 40), thin --ink-soft, 0.5px
+- Main line: polyline connecting all points, --ink, 1.5px thickness
+- Points on the line: small circles (r=2) at each data point, fill --ink-muted
+- Today's point (last): larger circle (r=4), fill --alarm
+- Value label next to today's point: "50" (Mono 9pt, --alarm), positioned above-right of the point
+- X-axis: label first date and last date only, Mono 8pt: "Apr 6" and "Apr 19"
+- NO y-axis tick labels
+
+--- CHART 4 — Enriched map (170×75mm — wide, full-width version) ---
+
+World map with all destinations dots and arcs from user origin.
+
+Fake data scenario (user in CH, 8 cities across 5 countries):
+  Origin: [6.63, 46.52] (Lausanne)
+  Destinations:
+  [
+    { city: "San Francisco", country: "US", coords: [-122.42, 37.77], count: 450 },
+    { city: "Mountain View", country: "US", coords: [-122.08, 37.39], count: 120 },
+    { city: "New York",      country: "US", coords: [-74.00, 40.71], count: 80 },
+    { city: "Paris",         country: "FR", coords: [2.35, 48.86],   count: 200 },
+    { city: "London",        country: "GB", coords: [-0.13, 51.51],  count: 100 },
+    { city: "Toronto",       country: "CA", coords: [-79.38, 43.65], count: 60 },
+    { city: "Hangzhou",      country: "CN", coords: [120.16, 30.26], count: 80 },
+    { city: "Tokyo",         country: "JP", coords: [139.69, 35.68], count: 20 }
+  ]
+
+Layout (reuse D3 + Natural Earth approach from /report/report.js map logic):
+- Same style as badge's worldmap (--land fill #EEECE3, --rule borders, --coast coastline)
+- Origin marker: solid black circle r=3, halo ring
+- Destination dots: sized by count (r=2 to r=6 range), fill --ink-muted
+- Arcs: thin great-circle curves from origin to each destination, --ink-muted with 50% opacity, width 0.4px
+- Antimeridian handling: reuse the split logic from badge map
+- Label "YOU ARE HERE" next to origin (monospace 8.5pt, same as badge)
+- Top 3 destinations: labeled with city name in monospace 7pt next to their dot
+- Other cities: just dots, no labels (to avoid clutter)
+- NO legend, NO title
+
+=== SANDBOX LAYOUT WITH ALL VARIANTS ===
+
+The sandbox shows EVERY size variant that exists in the PDF:
+
+For each chart, render 2 sandbox sections:
+1. FULL MODE size (smaller, grid-fit)
+2. LIGHT MODE size (larger, expanded)
+
+So instead of 6 sections in the sandbox (4 charts + 2 alternates), you'll have 8-12 depending on how many chart have distinct full vs light dimensions.
+
+Mono-vendor alternate and concentrated-hourly alternate: render in BOTH sizes as well, so we can judge how each looks scaled up/down.
+
+=== VERIFICATION ===
+
+Same as before: I open /report/charts-sandbox.html in Chrome, verify each chart visually, we iterate.
+
+=== IMPLEMENTATION APPROACH ===
+
+Each chart is written as raw SVG with inline JavaScript that generates the chart at load time from the fake data array. No D3 dependency for charts 1-3 (they're simple SVG with calculated coordinates). Chart 4 uses D3 — copy the relevant rendering logic from /report/report.js map function, adapt to the new data structure.
+
+Keep each chart's rendering function small and self-contained. Export-ready code that can be lifted directly into full.js in phase 05.4.2.
+
+=== VERIFICATION ===
+
+After creation:
+1. Open /report/charts-sandbox.html directly in Chrome (works over file:// since no ES6 imports needed)
+2. All 6 chart sections (4 main + 2 alternates) render visibly
+3. Report back with a screenshot of each chart section
+
+=== NOT IN SCOPE ===
+
+- Real data wiring (phase 05.4.2)
+- Fallback logic for zero-data cases (phase 05.4.3)
+- Light mode layout integration (phase 05.4.2)
+- PDF integration (phase 05.4.2)
+
+Do NOT commit yet. After Jon validates each chart visually, we iterate until happy, then move to 05.4.2.

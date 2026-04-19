@@ -301,6 +301,398 @@ function secondEntry(obj) {
 }
 
 /* ========================================================================
+   05.4 — Chart rendering (lifted from charts-sandbox.html)
+   ======================================================================== */
+
+/* Palette hard-coded so SVG presentation attrs pick up the exact colours
+   (CSS custom properties can't be referenced from SVG attribute values). */
+const C = {
+  ink:        "#0E0E0D",
+  inkMuted:   "#6B6B6A",
+  inkSoft:    "#A8A8A3",
+  rule:       "#D9D6CC",
+  alarm:      "#B91C1C",
+  bg:         "#FAFAF7",
+  sphere:     "#F5F3EB",
+  land:       "#EEECE3",
+  coast:      "#6B6B6A",
+  zoneGreen:  "#F0F7F0",
+  zonePink:   "#FBF0F0",
+};
+
+/* Size presets. The chart containers in full.html are sized via the
+   .chart-vendors / .chart-hourly / .chart-score / .chart-map CSS rules
+   (or .chart-tall for the 170×75mm light-mode variants); the opts here
+   only control the SVG viewBox and the D3 projection scale, which drive
+   internal bar / font / radius sizing. Container aspect must match
+   viewBox aspect to avoid letterboxing. */
+const DIMS_FULL_STANDARD = { W: 321, H: 208 };             // 85×55mm
+const DIMS_LIGHT         = { W: 642, H: 284 };             // 170×75mm
+const DIMS_MAP_FULL      = { W: 321, H: 246, scale: 60 };  // 85×65mm
+const DIMS_MAP_LIGHT     = { W: 642, H: 284, scale: 120 }; // 170×75mm
+
+function buildArcSegmentsChart(origin, dest, projection, Sf = 1) {
+  const olon = origin[0], olat = origin[1];
+  const dlon = dest[0],   dlat = dest[1];
+  const crosses = Math.abs(dlon - olon) > 180;
+  const STEPS = 48;
+  const MAX_LIFT = 20 * Sf;
+
+  if (!crosses) {
+    const interp = d3.geoInterpolate(origin, dest);
+    const pts = [];
+    for (let i = 0; i <= STEPS; i++) {
+      const t = i / STEPS;
+      const p = interp(t);
+      const lift = Math.sin(t * Math.PI) * MAX_LIFT;
+      const [px, py] = projection(p);
+      pts.push([px, py - lift]);
+    }
+    return [pts];
+  }
+  const east = olon > dlon;
+  const edgeOut = east ? 180 : -180;
+  const edgeIn  = east ? -180 : 180;
+  const lonDist1 = east ? 180 - olon : olon + 180;
+  const lonDist2 = east ? dlon + 180 : 180 - dlon;
+  const tEdge = lonDist1 / (lonDist1 + lonDist2);
+  const latEdge = olat + (dlat - olat) * tEdge;
+  const linear = (fLon, fLat, tLon, tLat, tStart, tEnd, steps) => {
+    const pts = [];
+    for (let i = 0; i <= steps; i++) {
+      const local = i / steps;
+      const lon = fLon + (tLon - fLon) * local;
+      const lat = fLat + (tLat - fLat) * local;
+      const globalT = tStart + (tEnd - tStart) * local;
+      const lift = Math.sin(globalT * Math.PI) * MAX_LIFT;
+      const [px, py] = projection([lon, lat]);
+      pts.push([px, py - lift]);
+    }
+    return pts;
+  };
+  const s1 = Math.max(12, Math.round(STEPS * tEdge));
+  const s2 = Math.max(12, Math.round(STEPS * (1 - tEdge)));
+  return [
+    linear(olon, olat, edgeOut, latEdge, 0, tEdge, s1),
+    linear(edgeIn, latEdge, dlon, dlat, tEdge, 1, s2),
+  ];
+}
+
+function renderVendorsBar(containerEl, vendors, opts = {}) {
+  const W = opts.W ?? 321;
+  const H = opts.H ?? 208;
+  const Sx = W / 321;
+  const Sy = H / 208;
+  const Sf = Math.min(Sx, Sy);
+
+  const NAME_W = 72 * Sx;
+  const VALUE_W = 72 * Sx;
+  const BAR_START = NAME_W + 6 * Sx;
+  const BAR_MAX = W - BAR_START - VALUE_W - 6 * Sx;
+  const BAR_H = 18 * Sy;
+  const ROW_GAP = 12 * Sy;
+  const FONT_BODY = 10 * Sf;
+  const FONT_MONO = 9 * Sf;
+  const FONT_MONO_VENDOR = 11 * Sf;
+
+  let svg = `<svg viewBox="0 0 ${W} ${H}" preserveAspectRatio="xMidYMid meet">`;
+
+  if (vendors.length === 1) {
+    const v = vendors[0];
+    const fullW = W - 4 * Sx;
+    const bh = BAR_H * 2;
+    svg += `<rect x="${2 * Sx}" y="${H / 2 - bh / 2}" width="${fullW}" height="${bh}" fill="${C.alarm}" />`;
+    svg += `<text x="${W / 2}" y="${H / 2 + 5 * Sy}" fill="${C.bg}" font-family="var(--font-body)" font-size="${FONT_MONO_VENDOR}" font-weight="500" text-anchor="middle" letter-spacing="0.03em">${v.name} · ${v.count.toLocaleString("en-US")} requests · ${v.share}%</text>`;
+    svg += `</svg>`;
+    containerEl.innerHTML = svg;
+    return;
+  }
+
+  const TOTAL_ROWS_H = vendors.length * BAR_H + (vendors.length - 1) * ROW_GAP;
+  const TOP = (H - TOTAL_ROWS_H) / 2;
+
+  vendors.forEach((v, i) => {
+    const y = TOP + i * (BAR_H + ROW_GAP);
+    const midY = y + BAR_H / 2 + 3 * Sy;
+    const barW = Math.max(2 * Sx, (v.share / 100) * BAR_MAX);
+    const fill = i === 0 ? C.alarm : C.inkMuted;
+    const countFmt = v.count.toLocaleString("en-US");
+    svg += `<text x="0" y="${midY}" font-family="var(--font-body)" font-size="${FONT_BODY}" fill="${C.ink}">${v.name}</text>`;
+    svg += `<rect x="${BAR_START}" y="${y}" width="${barW}" height="${BAR_H}" fill="${fill}" />`;
+    svg += `<text x="${BAR_START + barW + 6 * Sx}" y="${midY - 1}" font-family="var(--font-mono)" font-size="${FONT_MONO}" fill="${C.inkMuted}">${countFmt} · ${v.share}%</text>`;
+  });
+
+  svg += `</svg>`;
+  containerEl.innerHTML = svg;
+}
+
+function renderHourlyHistogram(containerEl, values, opts = {}) {
+  const W = opts.W ?? 321;
+  const H = opts.H ?? 208;
+  const Sx = W / 321;
+  const Sy = H / 208;
+  const Sf = Math.min(Sx, Sy);
+
+  const PAD_L = 6 * Sx, PAD_R = 6 * Sx;
+  const PAD_T = 24 * Sy, PAD_B = 22 * Sy;
+  const CHART_W = W - PAD_L - PAD_R;
+  const CHART_H = H - PAD_T - PAD_B;
+  const SLOT = CHART_W / 24;
+  const BAR_W = SLOT - 1.5 * Sx;
+  const FONT_PEAK = 9 * Sf;
+  const FONT_TICK = 8 * Sf;
+
+  const max = Math.max(...values);
+  const peakIdx = max > 0 ? values.indexOf(max) : -1;
+
+  let svg = `<svg viewBox="0 0 ${W} ${H}" preserveAspectRatio="xMidYMid meet">`;
+
+  values.forEach((v, i) => {
+    const x = PAD_L + i * SLOT + 0.75 * Sx;
+    if (v === 0) {
+      svg += `<rect x="${x}" y="${PAD_T + CHART_H - Sy}" width="${BAR_W}" height="${Sy}" fill="${C.inkSoft}" opacity="0.6" />`;
+    } else {
+      const h = (v / max) * CHART_H;
+      const y = PAD_T + CHART_H - h;
+      const fill = i === peakIdx ? C.alarm : C.inkMuted;
+      svg += `<rect x="${x}" y="${y}" width="${BAR_W}" height="${h}" fill="${fill}" />`;
+    }
+  });
+
+  if (peakIdx >= 0) {
+    const peakX = PAD_L + peakIdx * SLOT + BAR_W / 2 + 0.75 * Sx;
+    const peakY = PAD_T - 6 * Sy;
+    svg += `<text x="${peakX}" y="${peakY}" font-family="var(--font-mono)" font-size="${FONT_PEAK}" fill="${C.alarm}" text-anchor="middle">${max}</text>`;
+  }
+
+  [0, 6, 12, 18].forEach((hr) => {
+    const x = PAD_L + hr * SLOT + BAR_W / 2 + 0.75 * Sx;
+    svg += `<text x="${x}" y="${PAD_T + CHART_H + 14 * Sy}" font-family="var(--font-mono)" font-size="${FONT_TICK}" fill="${C.inkSoft}" text-anchor="middle">${hr}h</text>`;
+  });
+
+  svg += `</svg>`;
+  containerEl.innerHTML = svg;
+}
+
+function formatChartShortDate(iso) {
+  const months = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
+  const [y, m, d] = iso.split("-").map(Number);
+  return `${months[m - 1]} ${d}`;
+}
+
+function renderScoreEvolution(containerEl, history, opts = {}) {
+  const W = opts.W ?? 321;
+  const H = opts.H ?? 208;
+  const Sx = W / 321;
+  const Sy = H / 208;
+  const Sf = Math.min(Sx, Sy);
+
+  const PAD_L = 10 * Sx;
+  const PAD_R = 34 * Sx;
+  const PAD_T = 18 * Sy;
+  const PAD_B = 22 * Sy;
+  const CHART_W = W - PAD_L - PAD_R;
+  const CHART_H = H - PAD_T - PAD_B;
+  const FONT_TODAY = 9 * Sf;
+  const FONT_AVG = 7 * Sf;
+  const FONT_DATE = 8 * Sf;
+
+  const n = history.length;
+  if (n === 0) { containerEl.innerHTML = ""; return; }
+
+  const xAt = (i) => PAD_L + (n === 1 ? CHART_W / 2 : (i * CHART_W) / (n - 1));
+  const yAt = (score) => PAD_T + CHART_H - (score / 100) * CHART_H;
+  const avg = history.reduce((s, e) => s + e.score, 0) / n;
+
+  let svg = `<svg viewBox="0 0 ${W} ${H}" preserveAspectRatio="xMidYMid meet">`;
+  svg += `<rect x="${PAD_L}" y="${yAt(30)}" width="${CHART_W}" height="${yAt(0) - yAt(30)}" fill="${C.zoneGreen}" opacity="0.5" />`;
+  svg += `<rect x="${PAD_L}" y="${yAt(100)}" width="${CHART_W}" height="${yAt(60) - yAt(100)}" fill="${C.zonePink}" opacity="0.5" />`;
+  const avgY = yAt(avg);
+  svg += `<line x1="${PAD_L}" y1="${avgY}" x2="${PAD_L + CHART_W}" y2="${avgY}" stroke="${C.inkSoft}" stroke-width="${0.5 * Sf}" stroke-dasharray="${3 * Sf},${3 * Sf}" />`;
+  svg += `<text x="${PAD_L + CHART_W + 3 * Sx}" y="${avgY + 3 * Sy}" font-family="var(--font-mono)" font-size="${FONT_AVG}" fill="${C.inkSoft}">avg ${Math.round(avg)}</text>`;
+
+  const points = history.map((e, i) => `${xAt(i)},${yAt(e.score)}`).join(" ");
+  svg += `<polyline points="${points}" fill="none" stroke="${C.ink}" stroke-width="${1.5 * Sf}" stroke-linejoin="round" stroke-linecap="round" />`;
+
+  history.forEach((e, i) => {
+    const isToday = i === n - 1;
+    const r = (isToday ? 4 : 2) * Sf;
+    const fill = isToday ? C.alarm : C.inkMuted;
+    svg += `<circle cx="${xAt(i)}" cy="${yAt(e.score)}" r="${r}" fill="${fill}" />`;
+  });
+
+  const lastX = xAt(n - 1), lastY = yAt(history[n - 1].score);
+  svg += `<text x="${lastX + 6 * Sx}" y="${lastY - 5 * Sy}" font-family="var(--font-mono)" font-size="${FONT_TODAY}" fill="${C.alarm}" font-weight="500">${history[n - 1].score}</text>`;
+
+  const dateY = PAD_T + CHART_H + 14 * Sy;
+  svg += `<text x="${PAD_L}" y="${dateY}" font-family="var(--font-mono)" font-size="${FONT_DATE}" fill="${C.inkSoft}">${formatChartShortDate(history[0].date)}</text>`;
+  svg += `<text x="${PAD_L + CHART_W}" y="${dateY}" font-family="var(--font-mono)" font-size="${FONT_DATE}" fill="${C.inkSoft}" text-anchor="end">${formatChartShortDate(history[n - 1].date)}</text>`;
+
+  svg += `</svg>`;
+  containerEl.innerHTML = svg;
+}
+
+function renderMapChart(containerEl, origin, destinations, opts = {}) {
+  const W = opts.W ?? 642;
+  const H = opts.H ?? 284;
+  const projScale = opts.scale ?? 120;
+  const center = opts.center ?? [-10, 20];
+  const Sf = Math.min(W / 642, H / 284);
+
+  containerEl.innerHTML = "";
+  const svg = d3.select(containerEl).append("svg")
+    .attr("viewBox", `0 0 ${W} ${H}`)
+    .attr("preserveAspectRatio", "xMidYMid meet");
+
+  const projection = d3.geoNaturalEarth1()
+    .scale(projScale)
+    .center(center)
+    .translate([W / 2, H / 2]);
+  const path = d3.geoPath(projection);
+
+  svg.append("path").attr("d", path({ type: "Sphere" }))
+    .attr("fill", C.sphere).attr("stroke", "none");
+  svg.append("path").attr("d", path(d3.geoGraticule().step([30, 30])()))
+    .attr("fill", "none").attr("stroke", C.rule).attr("stroke-width", 0.3 * Sf)
+    .attr("stroke-dasharray", `${1 * Sf} ${2 * Sf}`).attr("opacity", 0.35);
+
+  const world = window.OYS_WORLD_ATLAS;
+  if (world) {
+    const countries = topojson.feature(world, world.objects.countries);
+    svg.append("g").selectAll("path").data(countries.features).enter().append("path")
+      .attr("d", path).attr("fill", C.land).attr("stroke", "none");
+    svg.append("path")
+      .attr("d", path(topojson.mesh(world, world.objects.countries, (a, b) => a !== b)))
+      .attr("fill", "none").attr("stroke", C.rule).attr("stroke-width", 0.4 * Sf).attr("opacity", 0.9);
+    svg.append("path")
+      .attr("d", path(topojson.mesh(world, world.objects.countries, (a, b) => a === b)))
+      .attr("fill", "none").attr("stroke", C.coast).attr("stroke-width", 0.7 * Sf);
+  }
+
+  const [ox, oy] = projection(origin);
+
+  if (destinations.length > 0) {
+    const arcLayer = svg.append("g");
+    const line = d3.line().curve(d3.curveBasis);
+    destinations.forEach((d) => {
+      for (const seg of buildArcSegmentsChart(origin, d.coords, projection, Sf)) {
+        arcLayer.append("path").attr("d", line(seg))
+          .attr("fill", "none").attr("stroke", C.inkMuted)
+          .attr("stroke-width", 0.6 * Sf).attr("opacity", 0.5).attr("stroke-linecap", "round");
+      }
+    });
+
+    const minC = Math.min(...destinations.map((d) => d.count));
+    const maxC = Math.max(...destinations.map((d) => d.count));
+    const rFor = (c) =>
+      (maxC === minC ? 3 : 2 + ((c - minC) / (maxC - minC)) * 4) * Sf;
+    destinations.forEach((d) => {
+      const [dx, dy] = projection(d.coords);
+      svg.append("circle").attr("cx", dx).attr("cy", dy).attr("r", rFor(d.count))
+        .attr("fill", C.inkMuted).attr("stroke", C.bg).attr("stroke-width", 0.8 * Sf);
+    });
+  }
+
+  // Origin halo + solid dot
+  svg.append("circle").attr("cx", ox).attr("cy", oy).attr("r", 10 * Sf)
+    .attr("fill", "none").attr("stroke", C.ink).attr("stroke-width", 1 * Sf).attr("opacity", 0.35);
+  svg.append("circle").attr("cx", ox).attr("cy", oy).attr("r", 5 * Sf)
+    .attr("fill", "none").attr("stroke", C.ink).attr("stroke-width", 1 * Sf).attr("opacity", 0.35);
+  svg.append("circle").attr("cx", ox).attr("cy", oy).attr("r", 3 * Sf)
+    .attr("fill", C.ink).attr("stroke", C.bg).attr("stroke-width", 1.5 * Sf);
+
+  const labelW = 78 * Sf, labelH = 13 * Sf;
+  const lx = ox - labelW / 2, ly = oy + 14 * Sf;
+  svg.append("rect").attr("x", lx).attr("y", ly).attr("width", labelW).attr("height", labelH)
+    .attr("fill", C.bg).attr("stroke", C.ink).attr("stroke-width", 0.4 * Sf);
+  svg.append("text").attr("x", ox).attr("y", ly + 9 * Sf).attr("text-anchor", "middle")
+    .attr("font-family", "var(--font-mono)").attr("font-size", 8.5 * Sf)
+    .attr("font-weight", 600).attr("letter-spacing", 0.8 * Sf)
+    .attr("fill", C.ink).text("YOU ARE HERE");
+}
+
+/* =====================================================================
+   Chart data prep
+   ===================================================================== */
+
+function buildVendorsChartData(byVendor, total) {
+  const entries = Object.entries(byVendor || {}).sort((a, b) => b[1] - a[1]);
+  return entries.map(([key, count]) => ({
+    name: VENDOR_PRODUCT[key] || key,
+    count,
+    share: total > 0 ? Math.round((count / total) * 100) : 0,
+  }));
+}
+
+function buildHourlyChartData(all) {
+  const hours = new Array(24).fill(0);
+  const todayK = dayKey();
+  let events = Array.isArray(all[EVENTS_PREFIX + todayK]) ? all[EVENTS_PREFIX + todayK] : [];
+
+  if (events.length === 0) {
+    // Fallback: aggregate all captured events so the chart isn't empty on day-key rollover.
+    for (const [key, value] of Object.entries(all)) {
+      if (!key.startsWith(EVENTS_PREFIX) || !Array.isArray(value)) continue;
+      events = events.concat(value);
+    }
+  }
+  for (const ev of events) {
+    if (ev && typeof ev.timestamp === "number") {
+      hours[new Date(ev.timestamp).getHours()] += 1;
+    }
+  }
+  return hours;
+}
+
+function buildMapChartData(byHost, userCountry) {
+  const originEntry = (userCountry && COUNTRY_COORDS[userCountry]) || DEFAULT_ORIGIN;
+  const origin = originEntry.coords;
+
+  const byCity = new Map();
+  for (const [host, count] of Object.entries(byHost || {})) {
+    const geo = HOST_GEO[host];
+    if (!geo) continue;
+    const key = geo.coords.join(",");
+    if (!byCity.has(key)) {
+      byCity.set(key, { city: geo.city, country: geo.country, coords: geo.coords, count: 0 });
+    }
+    byCity.get(key).count += count;
+  }
+  return { origin, destinations: Array.from(byCity.values()) };
+}
+
+function renderCharts(ctx, all, scoreHistory) {
+  const counters = all.oys_counters || defaultCounters();
+  const total = counters.total || 0;
+  const mode = chooseVariant("mode", ctx); // "full" or "light"
+
+  const vendorsData = buildVendorsChartData(counters.byVendor, total);
+  const hourlyData = buildHourlyChartData(all);
+  const mapData = buildMapChartData(counters.byHost, ctx.userCountry);
+
+  const dimsBar = mode === "full" ? DIMS_FULL_STANDARD : DIMS_LIGHT;
+  const dimsMap = mode === "full" ? DIMS_MAP_FULL : DIMS_MAP_LIGHT;
+
+  const vendorsEl = document.getElementById("chart-vendors");
+  const hourlyEl = document.getElementById("chart-hourly");
+  const scoreEl = document.getElementById("chart-score");
+  const mapEl = document.getElementById("chart-map");
+
+  if (vendorsEl && vendorsData.length > 0) {
+    renderVendorsBar(vendorsEl, vendorsData, dimsBar);
+  }
+  if (hourlyEl) {
+    renderHourlyHistogram(hourlyEl, hourlyData, dimsBar);
+  }
+  if (scoreEl && mode === "full") {
+    renderScoreEvolution(scoreEl, scoreHistory, dimsBar);
+  }
+  if (mapEl) {
+    renderMapChart(mapEl, mapData.origin, mapData.destinations, dimsMap);
+  }
+}
+
+/* ========================================================================
    05.3 — Score history + geo distances + prose templates
    ======================================================================== */
 
@@ -847,6 +1239,7 @@ async function initFull() {
 
     resolveVariants(ctx);
     replaceTokens(document.body, tokens);
+    renderCharts(ctx, all, scoreHistory);
 
     // --- Verification log (Part 9) ---
     const cat3Keys = new Set([
