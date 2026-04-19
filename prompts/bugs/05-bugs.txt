@@ -1,0 +1,18 @@
+Validated mostly — two issues to fix before committing:
+
+1. POPUP PADDING REGRESSION: "Who is" now sits flush against the top edge of the popup with no breathing room. The view refactor (splitting into #view-main and #view-settings) lost the original top padding on the main view. Restore the padding-top so there's a proper vertical gap between the popup edge and the "Who is" title. Same padding should apply to #view-settings so the "Settings" heading also has room.
+
+2. CHINA ARC ANTIMERIDIAN GLITCH: when user country is set to CN, the arc from Beijing to San Francisco/NY wraps around and renders as two parallel horizontal lines across the top of the map (crossing the north edge of the viewport), instead of a proper great-circle arc across the Pacific. This is the d3.geoInterpolate antimeridian quirk you flagged.
+
+   Fix approach: when the arc would cross the antimeridian (i.e., when origin and destination are on opposite sides of ±180°), split the arc into TWO segments:
+   - First segment: from origin to the antimeridian edge (lon = 180° or -180° depending on direction)
+   - Second segment: from the antimeridian to the destination
+   
+   Or alternatively: detect when |originLon - destLon| > 180, and in that case, route the interpolation through the shorter path by adjusting longitude. The arc should visually cross the Pacific Ocean as a smooth curve, not jump to the top edge.
+   
+   Test with user country = CN, destinations in the US. The arc should curve across the Pacific, not teleport across the top.
+
+Apply both fixes. Do NOT commit yet. After fixing, tell me:
+- The exact CSS change for popup padding
+- The approach used for the antimeridian fix (splitting arcs or longitude adjustment)
+- How the China → US arc looks after the fix

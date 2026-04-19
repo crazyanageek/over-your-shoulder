@@ -14,6 +14,12 @@ const ringFillEl   = document.getElementById("popup-ring-fill");
 const openBtn      = document.getElementById("open-report");
 const toggleBtn    = document.getElementById("toggle");
 const rootEl       = document.getElementById("popup-root");
+const viewMain     = document.getElementById("view-main");
+const viewSettings = document.getElementById("view-settings");
+const gearBtn      = document.getElementById("gear-btn");
+const backBtn      = document.getElementById("settings-back");
+const countryPicker= document.getElementById("country-picker");
+const resetBtn     = document.getElementById("reset-data-btn");
 
 function dayKey(ts = Date.now()) {
   const d = new Date(ts);
@@ -90,6 +96,38 @@ toggleBtn.addEventListener("click", async () => {
   const next = data[STORAGE_KEY_ACTIVE] === false;
   await chrome.storage.local.set({ [STORAGE_KEY_ACTIVE]: next });
   refresh();
+});
+
+function showSettings() {
+  viewMain.hidden = true;
+  viewSettings.hidden = false;
+  rootEl.classList.add("settings-open");
+}
+function showMain() {
+  viewSettings.hidden = true;
+  viewMain.hidden = false;
+  rootEl.classList.remove("settings-open");
+}
+gearBtn.addEventListener("click", showSettings);
+backBtn.addEventListener("click", showMain);
+
+chrome.storage.local.get({ oys_user_country: "auto" }).then((data) => {
+  countryPicker.value = data.oys_user_country;
+});
+countryPicker.addEventListener("change", () => {
+  chrome.storage.local.set({ oys_user_country: countryPicker.value });
+});
+
+resetBtn.addEventListener("click", async () => {
+  const ok = window.confirm("Reset all OYS data? This cannot be undone.");
+  if (!ok) return;
+  await chrome.storage.local.clear();
+  try {
+    await chrome.runtime.sendMessage({ type: "oys_reset" });
+  } catch {
+    // Service worker may be asleep; it will re-init on its own.
+  }
+  window.close();
 });
 
 refresh();

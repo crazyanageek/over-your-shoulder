@@ -1,4 +1,5 @@
 import { computeScore } from "../lib/score.js";
+import { detectUserCountry } from "../lib/country.js";
 
 const EVENTS_PREFIX = "oys_events_";
 const MIN_EVENTS_FOR_ACTIVE_DAY = 5;
@@ -33,6 +34,17 @@ const HOST_GEO = {
   "chat.deepseek.com":              { city: "Hangzhou",      country: "CN", coords: [120.16, 30.26] },
 };
 
+const COUNTRY_COORDS = {
+  CH:    { coords: [6.63, 46.52],   label: "YOU ARE HERE" },      // Lausanne
+  FR:    { coords: [2.35, 48.86],   label: "YOU ARE HERE" },      // Paris
+  DE:    { coords: [13.40, 52.52],  label: "YOU ARE HERE" },      // Berlin
+  GB:    { coords: [-0.13, 51.51],  label: "YOU ARE HERE" },      // London
+  US:    { coords: [-74.00, 40.71], label: "YOU ARE HERE" },      // New York
+  CN:    { coords: [116.40, 39.90], label: "YOU ARE HERE" },      // Beijing
+  OTHER: { coords: [-30, 35],       label: "YOU ARE NOT HERE" },  // Mid-Atlantic
+};
+const DEFAULT_ORIGIN = COUNTRY_COORDS.CH;
+
 const COUNTRY_NAME = {
   US: "United States",
   FR: "France",
@@ -47,8 +59,11 @@ const COUNTRY_NAME = {
 const FALLBACK_PUNCHLINES = {
   masthead: ["Your browser had a chattier day than you."],
   mapHeadline: {
-    usDominant: ["Your data crossed the Atlantic {N} times today."],
-    neutral:    ["{N} transmissions left this laptop today."],
+    domestic: {},
+    dominantByCountry: {
+      US: ["Your data crossed the Atlantic {N} times today."],
+    },
+    neutral: ["{N} transmissions left this laptop today."],
   },
   verdict: {
     low:       { lines: ["Barely exposed"] },
@@ -186,6 +201,60 @@ function earliestEventKey(all) {
   if (keys.length === 0) return null;
   keys.sort();
   return keys[0].slice(EVENTS_PREFIX.length);
+}
+
+async function selectMapHeadline(punchlines, counters, totalRequests) {
+  const lang = "en";
+  const mh = (punchlines.mapHeadline && punchlines.mapHeadline[lang]) || {};
+  const fbMh = FALLBACK_PUNCHLINES.mapHeadline;
+  const neutralPool = (mh.neutral && mh.neutral.length ? mh.neutral : fbMh.neutral) || [];
+
+  const byCountry = counters.byCountry || {};
+  const entries = Object.entries(byCountry);
+  if (entries.length === 0 || totalRequests <= 0) {
+    console.log("OYS mapHeadline pool: neutral (no byCountry data)");
+    return { template: pickRandom(neutralPool), nValue: totalRequests };
+  }
+
+  entries.sort((a, b) => b[1] - a[1]);
+  const [topCountry, topCount] = entries[0];
+  const topShare = topCount / totalRequests;
+
+  if (topShare < 0.70) {
+    console.log(
+      `OYS mapHeadline pool: neutral (top=${topCountry} ${Math.round(topShare * 100)}% < 70%)`
+    );
+    return { template: pickRandom(neutralPool), nValue: totalRequests };
+  }
+
+  const userCountry = await detectUserCountry();
+  const isDomestic = userCountry && userCountry === topCountry;
+  const domesticPool = mh.domestic && mh.domestic[topCountry];
+  const dominantPool = mh.dominantByCountry && mh.dominantByCountry[topCountry];
+  const fbDominant = fbMh.dominantByCountry && fbMh.dominantByCountry[topCountry];
+
+  if (isDomestic && domesticPool && domesticPool.length) {
+    console.log(
+      `OYS mapHeadline pool: domestic.${topCountry} (user=${userCountry}, top=${topCountry} ${Math.round(topShare * 100)}%)`
+    );
+    return { template: pickRandom(domesticPool), nValue: topCount };
+  }
+  if (!isDomestic && dominantPool && dominantPool.length) {
+    console.log(
+      `OYS mapHeadline pool: dominantByCountry.${topCountry} (user=${userCountry || "null"}, top=${topCountry} ${Math.round(topShare * 100)}%)`
+    );
+    return { template: pickRandom(dominantPool), nValue: topCount };
+  }
+  if (!isDomestic && fbDominant && fbDominant.length) {
+    console.log(
+      `OYS mapHeadline pool: FALLBACK.dominantByCountry.${topCountry} (user=${userCountry || "null"})`
+    );
+    return { template: pickRandom(fbDominant), nValue: topCount };
+  }
+  console.log(
+    `OYS mapHeadline pool: neutral (no matching pool for top=${topCountry}, user=${userCountry || "null"})`
+  );
+  return { template: pickRandom(neutralPool), nValue: totalRequests };
 }
 
 async function loadPunchlines() {
@@ -361,6 +430,69 @@ function renderMapHeadline(text) {
   }
 }
 
+/*
+ * Antimeridian-safe arc construction.
+ *
+ * d3.geoInterpolate returns great-circle points in [-180, 180], but the
+ * Natural Earth projection maps ±180 to opposite horizontal edges. When an
+ * arc's shortest path crosses the antimeridian (e.g. Beijing → San Francisco),
+ * interpolation near the crossing produces one point at x≈600 and the next at
+ * x≈0, rendering a spurious horizontal line across the top of the map.
+ *
+ * We detect the crossing (|dlon - olon| > 180) and split the arc into two
+ * screen-space segments that exit one edge and re-enter the other at the same
+ * latitude. The sine-curve lift uses the *global* t so the two halves meet
+ * seamlessly in y when the viewer's eye continues past the edge.
+ */
+function buildArcSegments(origin, dest, projection) {
+  const [olon, olat] = origin;
+  const [dlon, dlat] = dest;
+  const crosses = Math.abs(dlon - olon) > 180;
+  const STEPS = 48;
+
+  if (!crosses) {
+    const interp = d3.geoInterpolate(origin, dest);
+    const pts = [];
+    for (let i = 0; i <= STEPS; i++) {
+      const t = i / STEPS;
+      const p = interp(t);
+      const lift = Math.sin(t * Math.PI) * 18;
+      const [px, py] = projection(p);
+      pts.push([px, py - lift]);
+    }
+    return [pts];
+  }
+
+  const east = olon > dlon;                // crossing via +180 edge
+  const edgeOut = east ? 180 : -180;
+  const edgeIn  = east ? -180 : 180;
+  const lonDist1 = east ? 180 - olon : olon + 180;
+  const lonDist2 = east ? dlon + 180 : 180 - dlon;
+  const tEdge = lonDist1 / (lonDist1 + lonDist2);
+  const latEdge = olat + (dlat - olat) * tEdge;
+
+  const linearArc = (fLon, fLat, tLon, tLat, tStart, tEnd, steps) => {
+    const pts = [];
+    for (let i = 0; i <= steps; i++) {
+      const local = i / steps;
+      const lon = fLon + (tLon - fLon) * local;
+      const lat = fLat + (tLat - fLat) * local;
+      const globalT = tStart + (tEnd - tStart) * local;
+      const lift = Math.sin(globalT * Math.PI) * 18;
+      const [px, py] = projection([lon, lat]);
+      pts.push([px, py - lift]);
+    }
+    return pts;
+  };
+
+  const s1 = Math.max(12, Math.round(STEPS * tEdge));
+  const s2 = Math.max(12, Math.round(STEPS * (1 - tEdge)));
+  return [
+    linearArc(olon, olat, edgeOut, latEdge, 0,     tEdge, s1),
+    linearArc(edgeIn, latEdge, dlon,  dlat,  tEdge, 1,     s2),
+  ];
+}
+
 async function renderMap(counters) {
   const svg = d3.select("#worldmap");
   svg.selectAll("*").remove();
@@ -387,7 +519,14 @@ async function renderMap(counters) {
     console.error("OYS world atlas failed to load", e);
   }
 
-  const origin = [6.63, 46.52];
+  const userCountry = await detectUserCountry();
+  const originEntry =
+    (userCountry && COUNTRY_COORDS[userCountry]) || DEFAULT_ORIGIN;
+  const origin = originEntry.coords;
+  const originLabel = originEntry.label;
+  console.log(
+    `OYS map origin: ${userCountry || "null"} -> [${origin[0]}, ${origin[1]}] "${originLabel}"`
+  );
   const [ox, oy] = projection(origin);
 
   const byCity = new Map();
@@ -402,24 +541,17 @@ async function renderMap(counters) {
   destinations.forEach((d) => { d.tier = tierFor(d.count); d.color = tierColorHex(d.tier); });
 
   const arcLayer = svg.append("g");
+  const line = d3.line().curve(d3.curveBasis);
   destinations.forEach((d) => {
-    const interp = d3.geoInterpolate(origin, d.coords);
-    const steps = 48;
-    const lifted = [];
-    for (let i = 0; i <= steps; i++) {
-      const t = i / steps;
-      const p = interp(t);
-      const lift = Math.sin(t * Math.PI) * 18;
-      const [px, py] = projection(p);
-      lifted.push([px, py - lift]);
-    }
-    const line = d3.line().curve(d3.curveBasis);
     let strokeWidth, opacity;
     if (d.tier === 3)      { strokeWidth = 2.6; opacity = 0.92; }
     else if (d.tier === 2) { strokeWidth = 1.9; opacity = 0.9;  }
     else                   { strokeWidth = 1.5; opacity = 0.9;  }
-    arcLayer.append("path").attr("class", "arc").attr("d", line(lifted))
-      .attr("stroke", d.color).attr("stroke-width", strokeWidth).attr("opacity", opacity);
+
+    for (const segment of buildArcSegments(origin, d.coords, projection)) {
+      arcLayer.append("path").attr("class", "arc").attr("d", line(segment))
+        .attr("stroke", d.color).attr("stroke-width", strokeWidth).attr("opacity", opacity);
+    }
   });
 
   const dotLayer = svg.append("g");
@@ -434,14 +566,15 @@ async function renderMap(counters) {
   svg.append("circle").attr("class", "origin-ring").attr("cx", ox).attr("cy", oy).attr("r", 5);
   svg.append("circle").attr("class", "origin").attr("cx", ox).attr("cy", oy).attr("r", 2.5);
 
-  const labelWidth = 78, labelHeight = 13;
+  const labelWidth = originLabel === "YOU ARE NOT HERE" ? 110 : 78;
+  const labelHeight = 13;
   const labelX = ox - labelWidth / 2;
   const labelY = oy + 14;
   svg.append("rect").attr("class", "you-are-here-bg")
     .attr("x", labelX).attr("y", labelY).attr("width", labelWidth).attr("height", labelHeight);
   svg.append("text").attr("class", "you-are-here")
     .attr("x", ox).attr("y", labelY + 9).attr("text-anchor", "middle")
-    .text("YOU ARE HERE");
+    .text(originLabel);
 }
 
 function renderDestinations(counters) {
@@ -560,20 +693,14 @@ async function initReport() {
 
   const totalRequests = counters.total || 0;
   const byCountry = counters.byCountry || {};
-  const usTotal = byCountry.US || 0;
-  const usShare = totalRequests > 0 ? usTotal / totalRequests : 0;
-  const usDominant = usShare >= 0.8 && totalRequests > 0;
 
-  const mapTemplate = usDominant
-    ? pickRandom(punchlines.mapHeadline?.[lang]?.usDominant || FALLBACK_PUNCHLINES.mapHeadline.usDominant)
-    : pickRandom(punchlines.mapHeadline?.[lang]?.neutral    || FALLBACK_PUNCHLINES.mapHeadline.neutral);
-  const countryCount = Object.keys(byCountry).length;
-  const nValue = usDominant ? usTotal : totalRequests;
   let mapHeadline;
   if (totalRequests === 0) {
     mapHeadline = "No outbound requests yet.";
   } else {
-    mapHeadline = mapTemplate
+    const { template, nValue } = await selectMapHeadline(punchlines, counters, totalRequests);
+    const countryCount = Object.keys(byCountry).length;
+    mapHeadline = template
       .replace("{N}", `{em}${nValue.toLocaleString()}{/em}`)
       .replace("{C}", String(countryCount));
   }

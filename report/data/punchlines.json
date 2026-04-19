@@ -20,17 +20,74 @@
   },
 
   "mapHeadline": {
-    "$note": "Contextual variants. The report chooses a template based on the distribution of destinations. {N} is replaced with the total count of requests sent to the United States (from stats.byCountry.US). If US share is < 80%, a neutral variant is chosen instead.",
+    "$note": "Contextual variants keyed by the dominant destination country (>=70% of traffic) and whether the user is IN that country (domestic) or OUTSIDE it (dominantByCountry). If no country crosses the 70% threshold, the neutral pool is used. {N} resolves to the count for the dominant country; in the neutral pool {N} is the grand total and {C} is the number of distinct destination countries.",
     "en": {
-      "usDominant": [
-        "Your data crossed the Atlantic {N} times today.",
-        "Your browser phoned California {N} times today.",
-        "{N} transmissions left this laptop for the US today.",
-        "{N} postcards to America. Return address: you.",
-        "Silicon Valley received {N} updates about you today.",
-        "{N} round trips to American servers.",
-        "Today, your browser took {N} meetings abroad."
-      ],
+      "domestic": {
+        "US": [
+          "Your data barely left the state today. {N} trips.",
+          "Silicon Valley stayed in the loop. {N} updates.",
+          "{N} domestic transmissions. All staying on American soil.",
+          "Your browser didn't leave the country, but it never stopped talking."
+        ],
+        "CN": [
+          "Your data stayed inside the Great Firewall today. {N} trips.",
+          "{N} domestic requests to Chinese servers.",
+          "{N} conversations, all within the country's borders."
+        ],
+        "FR": [
+          "Your data stayed French today — {N} times.",
+          "{N} requests, all domestic. For once.",
+          "{N} round trips that never left French territory."
+        ],
+        "GB": [
+          "{N} requests, all UK-bound.",
+          "Your data stayed home today. {N} local trips.",
+          "Domestic traffic only. {N} conversations on British soil."
+        ],
+        "DE": [
+          "{N} requests that stayed in Germany.",
+          "Frankfurt to Munich and back — {N} domestic trips.",
+          "Your data respected its borders today. {N} internal requests."
+        ],
+        "CH": [
+          "{N} requests, all Swiss-bound. Unusual.",
+          "Your data stayed in the Alps today. {N} trips.",
+          "A rare day — all {N} conversations stayed local."
+        ]
+      },
+      "dominantByCountry": {
+        "US": [
+          "Your data crossed the Atlantic {N} times today.",
+          "Your browser phoned California {N} times today.",
+          "{N} transmissions left this laptop for the US today.",
+          "{N} postcards to America. Return address: you.",
+          "Silicon Valley received {N} updates about you today.",
+          "{N} round trips to American servers.",
+          "Today, your browser took {N} meetings abroad."
+        ],
+        "CN": [
+          "Your data made {N} trips to Chinese servers today.",
+          "{N} packets routed through Beijing today.",
+          "{N} messages for a Chinese inbox. Yours.",
+          "Shenzhen and Hangzhou got {N} reports about your day."
+        ],
+        "FR": [
+          "Your data visited France {N} times today.",
+          "{N} round trips between your browser and Paris.",
+          "A French server heard from you {N} times today.",
+          "{N} transmissions stayed European. Barely."
+        ],
+        "GB": [
+          "{N} requests crossed the Channel today.",
+          "London got {N} updates about what you're doing.",
+          "{N} transmissions to British infrastructure."
+        ],
+        "DE": [
+          "Frankfurt's data centers heard from you {N} times.",
+          "{N} requests landed on German servers today.",
+          "Your browser spent {N} visits in Germany."
+        ]
+      },
       "neutral": [
         "{N} transmissions left this laptop today.",
         "{N} requests, routed across {C} countries.",
@@ -39,8 +96,8 @@
       ]
     },
     "$tokens": {
-      "{N}": "total requests to AI endpoints (integer with thousands separator)",
-      "{C}": "number of distinct destination countries"
+      "{N}": "domestic: count for user's own country; dominantByCountry: count for the dominant destination country; neutral: total requests across all countries.",
+      "{C}": "number of distinct destination countries (neutral pool only)"
     }
   },
 

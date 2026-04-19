@@ -1,0 +1,59 @@
+Phase 04.7.1 — Map origin and "YOU ARE HERE" label must reflect user's country.
+
+CONTEXT
+Phase 04.7 added user country detection and per-country punchlines. But the map origin is still hardcoded to Lausanne [6.63, 46.52], which breaks visual coherence when the user's country is different from Switzerland.
+
+GOAL
+The map origin point + "YOU ARE HERE" label must move based on the detected/chosen user country. When the user selects "Other", the label becomes "YOU ARE NOT HERE" placed in the North Atlantic ocean.
+
+=== IMPLEMENTATION ===
+
+1. Add a COUNTRY_COORDS map in /report/report.js (or in /lib/country.js — your choice, wherever cleaner):
+
+   const COUNTRY_COORDS = {
+     "CH": { coords: [6.63, 46.52], label: "YOU ARE HERE" },   // Lausanne
+     "FR": { coords: [2.35, 48.86], label: "YOU ARE HERE" },   // Paris
+     "DE": { coords: [13.40, 52.52], label: "YOU ARE HERE" },  // Berlin
+     "GB": { coords: [-0.13, 51.51], label: "YOU ARE HERE" },  // London
+     "US": { coords: [-74.00, 40.71], label: "YOU ARE HERE" }, // New York
+     "CN": { coords: [116.40, 39.90], label: "YOU ARE HERE" }, // Beijing
+     "OTHER": { coords: [-30, 35], label: "YOU ARE NOT HERE" } // Middle of North Atlantic
+   };
+
+   const DEFAULT_COORDS = COUNTRY_COORDS["CH"]; // fallback if detection fails entirely
+
+2. In renderMap() (or wherever the D3 map is drawn):
+   - At the start of map rendering, call detectUserCountry() to get the user's country
+   - Look up COUNTRY_COORDS for that country
+   - If userCountry is null (neither detected nor chosen), use DEFAULT_COORDS (Lausanne)
+   - If userCountry is "OTHER", use the OTHER entry (Atlantic + different label)
+   - Use these coords for the origin point and the label text
+
+3. Arcs behavior:
+   - All existing arcs continue to start from the origin (whatever it is)
+   - If origin is in the Atlantic (OTHER), arcs still draw from that point to destinations. The visual is slightly strange (trips starting from the sea) but intentional and consistent with the "you are not here" irony.
+
+4. Label positioning:
+   - The existing background rect + text positioning logic stays identical — just reads the new coords
+   - For "YOU ARE NOT HERE", the label is longer. Make sure the background rect width adjusts: measure the text width dynamically OR hardcode a wider rect (e.g. 110px width instead of 78px) ONLY when label is "YOU ARE NOT HERE"
+
+5. Re-rendering:
+   - When user changes country in settings and reopens the report, the map must reflect the new origin
+   - The existing re-fetch on report open handles this — just verify that detectUserCountry() is called fresh at every initReport() invocation, not cached
+
+=== VERIFY ===
+
+After implementation:
+1. Default (user in CH, auto-detect) → origin at Lausanne, label "YOU ARE HERE"
+2. Change country to "United States" in settings, reopen report → origin at New York, label "YOU ARE HERE"
+3. Change country to "Other" → origin in the Atlantic, label "YOU ARE NOT HERE"
+4. Arcs in all cases start from the new origin point
+5. No console errors, no broken layout
+
+Tell me:
+- Your detected country at render time
+- The actual origin coordinates used
+- Whether the label width adjusts correctly for "YOU ARE NOT HERE"
+- Any visual weirdness (arc going backwards across the dateline, label overlap, etc.)
+
+Do NOT commit yet.

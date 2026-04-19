@@ -35,6 +35,109 @@ body {
   position: relative;
 }
 
+#view-main,
+#view-settings {
+  display: flex;
+  flex-direction: column;
+  flex: 1;
+  min-height: 0;
+  padding-top: 14px;
+}
+#view-main[hidden],
+#view-settings[hidden] { display: none; }
+
+.gear-btn {
+  position: absolute;
+  top: 8px;
+  right: 8px;
+  width: 24px;
+  height: 24px;
+  padding: 0;
+  background: transparent;
+  border: none;
+  color: var(--ink-muted);
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 10;
+}
+.gear-btn:hover { color: var(--ink); }
+.gear-btn svg { display: block; }
+#popup-root.settings-open .gear-btn { display: none; }
+
+/* ============ SETTINGS VIEW ============ */
+.settings-back-btn {
+  align-self: flex-start;
+  font-family: var(--font-display);
+  font-style: italic;
+  font-weight: 400;
+  font-size: 0.9rem;
+  color: var(--ink);
+  background: none;
+  border: none;
+  padding: 8px 0;
+  margin-top: 6px;
+  cursor: pointer;
+}
+.settings-back-btn:hover { color: var(--ink-muted); }
+
+#view-settings h2 {
+  font-family: var(--font-display);
+  font-style: italic;
+  font-weight: 500;
+  font-size: 1.2rem;
+  color: var(--ink);
+  margin: 4px 0 14px;
+}
+
+.settings-section {
+  margin-bottom: 16px;
+}
+.settings-section label {
+  display: block;
+  font-family: var(--font-body);
+  font-size: 10px;
+  font-weight: 600;
+  letter-spacing: 0.15em;
+  text-transform: uppercase;
+  color: var(--ink-muted);
+  margin-bottom: 6px;
+}
+.settings-hint {
+  font-family: var(--font-mono);
+  font-size: 10px;
+  color: var(--ink-soft);
+  line-height: 1.4;
+  margin: 6px 0 0;
+}
+
+#country-picker {
+  width: 100%;
+  padding: 8px 10px;
+  font-family: var(--font-body);
+  font-size: 14px;
+  color: var(--ink);
+  background: var(--bg);
+  border: 1px solid var(--rule);
+  border-radius: 2px;
+}
+#country-picker:focus { outline: 1px solid var(--ink); outline-offset: -1px; }
+
+.settings-danger {
+  background: var(--ink);
+  color: var(--bg);
+  font-family: var(--font-display);
+  font-style: italic;
+  font-weight: 500;
+  font-size: 0.9rem;
+  padding: 8px 14px;
+  border: none;
+  border-radius: 2px;
+  cursor: pointer;
+}
+.settings-danger:hover { background: #1f1f1e; }
+
 .pause-bar {
   height: 4px;
   background: var(--alarm);
@@ -61,7 +164,6 @@ body {
 .popup.paused .pop-num { color: var(--ink-muted); }
 .popup.paused .pop-score { opacity: 0.55; }
 
-.popup:not(.paused) > .pop-mast { padding-top: 14px; }
 
 .pop-mast {
   border-bottom: 1px solid var(--ink);

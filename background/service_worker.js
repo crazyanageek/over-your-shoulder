@@ -187,6 +187,18 @@ chrome.storage.onChanged.addListener((changes, area) => {
   }
 });
 
+chrome.runtime.onMessage.addListener((msg, _sender, sendResponse) => {
+  if (msg && msg.type === "oys_reset") {
+    ringBuffer = [];
+    pending.clear();
+    active = true;
+    updateBadge(true);
+    console.log("OYS storage reset from popup");
+    sendResponse({ ok: true });
+  }
+  return true;
+});
+
 async function flush() {
   if (flushing) return;
   flushing = true;

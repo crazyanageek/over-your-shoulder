@@ -10,39 +10,75 @@
     <main class="popup" id="popup-root">
       <div class="pause-bar" aria-hidden="true"></div>
       <p class="pause-notice" id="pause-notice">Paused · no data is being recorded</p>
-      <header class="pop-mast">
-        <p class="pop-title">
-          <span class="mast-muted">Who is</span>
-          <span class="mast-strong">looking over your shoulder?</span>
-        </p>
-      </header>
 
-      <section class="pop-hero">
-        <p class="pop-num" id="popup-today">0</p>
-        <p class="pop-label">Requests today</p>
-        <p class="pop-cumulative" id="popup-cumulative">— since install</p>
-      </section>
+      <button id="gear-btn" class="gear-btn" type="button" aria-label="Settings" title="Settings">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+          <circle cx="12" cy="12" r="3"/>
+          <path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 2.83-2.83l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/>
+        </svg>
+      </button>
 
-      <section class="pop-score">
-        <div class="pop-ring">
-          <svg viewBox="0 0 120 120" xmlns="http://www.w3.org/2000/svg">
-            <circle class="ring-bg" cx="60" cy="60" r="52" />
-            <circle class="ring-fill" id="popup-ring-fill" cx="60" cy="60" r="52"
-                    stroke="#CC9500" stroke-dasharray="0 327" />
-          </svg>
-          <div class="pop-ring-center">
-            <span class="num" id="popup-score">0</span>
+      <div id="view-main">
+        <header class="pop-mast">
+          <p class="pop-title">
+            <span class="mast-muted">Who is</span>
+            <span class="mast-strong">looking over your shoulder?</span>
+          </p>
+        </header>
+
+        <section class="pop-hero">
+          <p class="pop-num" id="popup-today">0</p>
+          <p class="pop-label">Requests today</p>
+          <p class="pop-cumulative" id="popup-cumulative">— since install</p>
+        </section>
+
+        <section class="pop-score">
+          <div class="pop-ring">
+            <svg viewBox="0 0 120 120" xmlns="http://www.w3.org/2000/svg">
+              <circle class="ring-bg" cx="60" cy="60" r="52" />
+              <circle class="ring-fill" id="popup-ring-fill" cx="60" cy="60" r="52"
+                      stroke="#CC9500" stroke-dasharray="0 327" />
+            </svg>
+            <div class="pop-ring-center">
+              <span class="num" id="popup-score">0</span>
+            </div>
           </div>
-        </div>
-        <div class="pop-score-side">
-          <p class="pop-score-label">Exposure</p>
-          <p class="pop-verdict" id="popup-verdict">—</p>
-        </div>
-      </section>
+          <div class="pop-score-side">
+            <p class="pop-score-label">Exposure</p>
+            <p class="pop-verdict" id="popup-verdict">—</p>
+          </div>
+        </section>
 
-      <div class="pop-actions">
-        <button id="open-report" class="pop-btn primary" type="button">OPEN DAILY REPORT →</button>
-        <button id="toggle" class="pop-btn secondary" type="button">Pause</button>
+        <div class="pop-actions">
+          <button id="open-report" class="pop-btn primary" type="button">OPEN DAILY REPORT →</button>
+          <button id="toggle" class="pop-btn secondary" type="button">Pause</button>
+        </div>
+      </div>
+
+      <div id="view-settings" hidden>
+        <button id="settings-back" class="settings-back-btn" type="button">← Back</button>
+        <h2>Settings</h2>
+
+        <section class="settings-section">
+          <label for="country-picker">My country</label>
+          <select id="country-picker">
+            <option value="auto">Auto-detect</option>
+            <option value="CN">🇨🇳 China</option>
+            <option value="FR">🇫🇷 France</option>
+            <option value="DE">🇩🇪 Germany</option>
+            <option value="CH">🇨🇭 Switzerland</option>
+            <option value="GB">🇬🇧 United Kingdom</option>
+            <option value="US">🇺🇸 United States</option>
+            <option value="OTHER">— Other</option>
+          </select>
+          <p class="settings-hint">Used to phrase your exposure report. Auto-detect uses your timezone and language.</p>
+        </section>
+
+        <section class="settings-section">
+          <label>Reset data</label>
+          <button id="reset-data-btn" class="settings-danger" type="button">Reset all collected data</button>
+          <p class="settings-hint">Clears all captured events, counters, and score. Cannot be undone.</p>
+        </section>
       </div>
     </main>
     <script type="module" src="popup.js"></script>

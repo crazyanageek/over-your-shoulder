@@ -1,0 +1,248 @@
+Phase 04.7 — Country detection with user override + per-country punchline pools.
+
+This phase has three parts:
+1. Add a settings view in the popup (gear icon → country selector + reset data button)
+2. Implement country detection logic (timezone + language + user override)
+3. Expand punchlines.json with domestic and dominant-by-country pools, and update the selection logic in report.js
+
+=== PART 1 — Popup settings view ===
+
+Add a gear icon in the popup top-right corner:
+- SVG inline, 16×16px, currentColor = var(--ink-muted), hover → var(--ink)
+- Position: top: 0.5rem; right: 0.5rem; absolute positioning inside .popup
+- No background, no border, just the icon, 24×24 click target
+
+Clicking the gear SWITCHES the popup content (does not open a new tab, does not overlay). Implementation: two top-level views in popup.html wrapped in divs with ids "view-main" and "view-settings". JS toggles display between them. Default view is "view-main".
+
+Settings view content:
+
+  <h2>Settings</h2>
+  
+  <section>
+    <label>My country</label>
+    <select id="country-picker">
+      <option value="auto">Auto-detect</option>
+      <option value="CN">🇨🇳 China</option>
+      <option value="FR">🇫🇷 France</option>
+      <option value="DE">🇩🇪 Germany</option>
+      <option value="CH">🇨🇭 Switzerland</option>
+      <option value="GB">🇬🇧 United Kingdom</option>
+      <option value="US">🇺🇸 United States</option>
+      <option value="OTHER">— Other</option>
+    </select>
+    <p class="settings-hint">Used to phrase your exposure report. Auto-detect uses your timezone and language.</p>
+  </section>
+  
+  <section>
+    <label>Reset data</label>
+    <button id="reset-data-btn" class="settings-danger">Reset all collected data</button>
+    <p class="settings-hint">Clears all captured events, counters, and score. Cannot be undone.</p>
+  </section>
+  
+  <button id="settings-back" class="settings-back-btn">← Back</button>
+
+Styling of the settings view:
+- Match existing popup typography (Fraunces for h2, Inter for labels, mono for hints)
+- h2 in Fraunces italic, 1.2rem, ink color
+- label in Inter 600, uppercase, 10px, letter-spacing 0.15em, ink-muted
+- .settings-hint in mono, 10px, ink-soft, max-width matching section width
+- select: full width, 1px solid var(--rule), padding 0.5rem, Inter 14px, ink color, appearance: none with custom arrow
+- .settings-danger button: background ink, color cream, Fraunces italic 0.9rem, padding 0.5rem 1rem
+- .settings-back-btn: text-only link, italic Fraunces, top-left corner of settings view
+
+Store the country preference under chrome.storage.local key `oys_user_country`. Values: one of "auto", "CN", "FR", "DE", "CH", "GB", "US", "OTHER". Default: "auto" when key is missing.
+
+Reset button handler:
+- Show confirm: "Reset all OYS data? This cannot be undone."
+- If confirmed: chrome.storage.local.clear() then send a message to the background worker to re-init defaults, close popup
+
+=== PART 2 — Country detection logic ===
+
+Create a new file /lib/country.js (or add to existing lib/ if you prefer) exporting:
+
+  async function detectUserCountry() { ... }
+
+Logic in order of priority:
+
+1. Check chrome.storage.local.oys_user_country:
+   - If missing OR equals "auto" → continue to auto-detection
+   - If equals a country code ("CN", "FR", "DE", "CH", "GB", "US") → return that code
+   - If equals "OTHER" → return null (triggers neutral pool)
+
+2. Auto-detect using timezone:
+   Get Intl.DateTimeFormat().resolvedOptions().timeZone (e.g. "Europe/Zurich")
+   Map common timezones to country codes:
+   
+   const TZ_MAP = {
+     "Europe/Zurich": "CH",
+     "Europe/Paris": "FR",
+     "Europe/Berlin": "DE",
+     "Europe/Frankfurt": "DE",
+     "Europe/Munich": "DE",
+     "Europe/London": "GB",
+     "America/New_York": "US",
+     "America/Chicago": "US",
+     "America/Denver": "US",
+     "America/Los_Angeles": "US",
+     "America/Phoenix": "US",
+     "America/Anchorage": "US",
+     "Pacific/Honolulu": "US",
+     "Asia/Shanghai": "CN",
+     "Asia/Beijing": "CN",
+     "Asia/Hong_Kong": "CN",
+     "Asia/Chongqing": "CN",
+     "Asia/Urumqi": "CN"
+   };
+   
+   If timezone matches, return the code.
+
+3. Fallback to language detection:
+   Use navigator.language (e.g. "fr-CH", "en-US"). Extract the country suffix after the dash.
+   Only trust this if it matches our 6 supported countries; otherwise proceed to step 4.
+
+4. If neither worked, return null.
+
+The function is called by report.js at render time.
+
+=== PART 3 — Punchlines.json restructure and selection logic ===
+
+Restructure /report/data/punchlines.json mapHeadline section:
+
+  "mapHeadline": {
+    "$note": "...",
+    "en": {
+      "domestic": {
+        "US": [...4 lines...],
+        "CN": [...3 lines...],
+        "FR": [...3 lines...],
+        "GB": [...3 lines...],
+        "DE": [...3 lines...],
+        "CH": [...3 lines...]
+      },
+      "dominantByCountry": {
+        "US": [...5 existing US lines...],
+        "CN": [...4 lines...],
+        "FR": [...4 lines...],
+        "GB": [...3 lines...],
+        "DE": [...3 lines...]
+      },
+      "neutral": [...4 existing neutral lines...]
+    },
+    "$tokens": { "{N}": "...", "{C}": "..." }
+  }
+
+CONTENT TO INSERT — domestic pools:
+
+US domestic (user in US, traffic US):
+  "Your data barely left the state today. {N} trips.",
+  "Silicon Valley stayed in the loop. {N} updates.",
+  "{N} domestic transmissions. All staying on American soil.",
+  "Your browser didn't leave the country, but it never stopped talking."
+
+CN domestic:
+  "Your data stayed inside the Great Firewall today. {N} trips.",
+  "{N} domestic requests to Chinese servers.",
+  "{N} conversations, all within the country's borders."
+
+FR domestic:
+  "Your data stayed French today — {N} times.",
+  "{N} requests, all domestic. For once.",
+  "{N} round trips that never left French territory."
+
+GB domestic:
+  "{N} requests, all UK-bound.",
+  "Your data stayed home today. {N} local trips.",
+  "Domestic traffic only. {N} conversations on British soil."
+
+DE domestic:
+  "{N} requests that stayed in Germany.",
+  "Frankfurt to Munich and back — {N} domestic trips.",
+  "Your data respected its borders today. {N} internal requests."
+
+CH domestic:
+  "{N} requests, all Swiss-bound. Unusual.",
+  "Your data stayed in the Alps today. {N} trips.",
+  "A rare day — all {N} conversations stayed local."
+
+CONTENT TO INSERT — dominantByCountry pools (user NOT in that country but traffic goes to it):
+
+US → keep the 5 existing lines (already in the current pool under "usDominant")
+
+CN:
+  "Your data made {N} trips to Chinese servers today.",
+  "{N} packets routed through Beijing today.",
+  "{N} messages for a Chinese inbox. Yours.",
+  "Shenzhen and Hangzhou got {N} reports about your day."
+
+FR:
+  "Your data visited France {N} times today.",
+  "{N} round trips between your browser and Paris.",
+  "A French server heard from you {N} times today.",
+  "{N} transmissions stayed European. Barely."
+
+GB:
+  "{N} requests crossed the Channel today.",
+  "London got {N} updates about what you're doing.",
+  "{N} transmissions to British infrastructure."
+
+DE:
+  "Frankfurt's data centers heard from you {N} times.",
+  "{N} requests landed on German servers today.",
+  "Your browser spent {N} visits in Germany."
+
+Keep the existing neutral pool unchanged.
+
+IMPORTANT: rename the existing "usDominant" key to "dominantByCountry.US" to match the new structure. The old "usDominant" key should no longer exist in the file.
+
+SELECTION LOGIC in report.js:
+
+Replace the existing usShare-based selection with:
+
+  async function selectMapHeadline(punchlines, counters, totalRequests) {
+    const userCountry = await detectUserCountry();
+    const byCountry = counters.byCountry || {};
+    const countryEntries = Object.entries(byCountry);
+    if (countryEntries.length === 0) return pickRandom(punchlines.mapHeadline.en.neutral);
+    
+    // Find dominant country (>= 70% of traffic)
+    const sortedCountries = countryEntries.sort((a, b) => b[1] - a[1]);
+    const [topCountry, topCount] = sortedCountries[0];
+    const topShare = topCount / totalRequests;
+    
+    if (topShare < 0.70) {
+      // No dominant country
+      return pickRandom(punchlines.mapHeadline.en.neutral);
+    }
+    
+    // There IS a dominant country
+    if (userCountry === topCountry) {
+      // User is IN the dominant country — domestic pool
+      const domesticPool = punchlines.mapHeadline.en.domestic[topCountry];
+      if (domesticPool) return pickRandom(domesticPool);
+      // Fallback: no domestic pool for this country
+      return pickRandom(punchlines.mapHeadline.en.neutral);
+    } else {
+      // User is OUTSIDE the dominant country — dominantByCountry pool
+      const dominantPool = punchlines.mapHeadline.en.dominantByCountry[topCountry];
+      if (dominantPool) return pickRandom(dominantPool);
+      // Fallback: no dominant pool for this country
+      return pickRandom(punchlines.mapHeadline.en.neutral);
+    }
+  }
+
+Token substitution: {N} is the count for the dominant country (NOT total). {C} is the number of distinct countries (for neutral pool only, where it appears).
+
+=== VERIFY ===
+
+After implementation, tell me:
+1. The current detected user country (should be CH for me based on timezone)
+2. The current dominant country in my data (likely US at 100%)
+3. Which pool was selected: domestic/dominantByCountry/neutral + language + the specific line picked this render
+4. Walkthrough edge cases:
+   - User sets country to "US" manually while traffic is 100% US → domestic.US pool
+   - User sets country to "OTHER" → null, always neutral
+   - User auto-detects as CH, traffic is 100% US → dominantByCountry.US pool
+   - Traffic is 60% US, 40% FR → no dominant (< 70%), neutral pool
+5. Settings view: confirm gear icon switches to settings, country picker saves, reset button clears storage
+
+Do NOT commit yet.

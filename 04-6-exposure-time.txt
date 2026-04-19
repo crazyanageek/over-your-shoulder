@@ -1,0 +1,87 @@
+Phase 04.6 — Exposure time metric in the report hero-sub.
+
+GOAL
+Replace the current italic hero-sub line (which rotates from punchlines.json heroSub pool) with a factual, dynamic three-number sentence:
+
+  "In {X minutes} on AI sites, your browser sent {Y} requests. That's one every {Z} seconds."
+
+All three numbers are derived from existing event data in chrome.storage.local. No new data capture. No endpoint lists. No external dependencies.
+
+COMPUTATION LOGIC
+
+Add a new function computeExposureStats() in report.js that:
+
+1. Collects all event timestamps across the last 30 days of oys_events_YYYYMMDD keys. Loop over all day-keys in storage, concatenate their .timestamps arrays (if your schema stores individual event objects with .ts or .timestamp field, extract those). Sort ascending.
+
+2. Groups timestamps into SESSIONS using a gap threshold of 5 minutes (300000 ms):
+   - Start a new session if gap from previous timestamp > 300000 ms OR it's the first timestamp
+   - For each session, record start and end timestamps
+   - Session duration = end - start (in ms)
+   - If a session has only one timestamp, assign it a minimum duration of 30 seconds (30000 ms) to avoid zero-duration sessions
+
+3. Returns an object:
+   {
+     totalMinutes: Math.round(sumOfSessionDurations / 60000),
+     totalRequests: counters.total,
+     secondsPerRequest: (sumOfSessionDurations / 1000) / counters.total,
+     sessionCount: sessions.length
+   }
+
+4. Edge cases:
+   - If counters.total === 0: return null (empty state handles this already)
+   - If totalMinutes < 1: round up to 1 ("In 1 minute on AI sites...")
+   - If secondsPerRequest < 1: display as "1 every {fractional} seconds" with one decimal (e.g. "one every 0.8 seconds")
+   - If secondsPerRequest >= 60: display as minutes instead ("one every 2 minutes")
+   - If secondsPerRequest > 300: suppress that fragment entirely, just show the first two numbers
+
+RENDERING
+
+Modify renderHeroSub() in report.js:
+
+1. Call computeExposureStats() at the top
+2. If stats is null (total === 0), keep current fallback copy ("No data yet. Come back tomorrow.")
+3. Otherwise, REPLACE the existing random-pick-from-punchlines.heroSub logic with the new templated sentence:
+
+   For secondsPerRequest >= 1 and < 60:
+     "In {X} minutes on AI sites, your browser sent {Y} requests. That's one every {Z} seconds."
+   
+   For secondsPerRequest < 1:
+     "In {X} minutes on AI sites, your browser sent {Y} requests. That's one every {Z} seconds." (with Z as decimal like "0.8")
+   
+   For secondsPerRequest >= 60:
+     "In {X} minutes on AI sites, your browser sent {Y} requests. That's one every {W} minutes."
+     where W = Math.round(secondsPerRequest / 60)
+   
+   For secondsPerRequest > 300 (very sparse):
+     "In {X} minutes on AI sites, your browser sent {Y} requests."
+
+4. Format numbers:
+   - X (minutes): integer with no separator if < 60, otherwise "1h 23" format is NOT needed — just display as integer minutes (e.g. "127 minutes")
+   - Y (requests): toLocaleString() for thousands separator (e.g. "2,060")
+   - Z (seconds): one decimal if < 1, integer if >= 1 and < 60
+
+5. The sentence is in Fraunces italic (existing styling), with ink color on the numbers for emphasis. Add a class "exposure-stat-number" on each number span so we can style them later if needed. For now, no special styling — just inherit italic.
+
+CLEANUP
+
+Remove the heroSub pool from /report/data/punchlines.json entirely — it's no longer used. Other pools (masthead, mapHeadline, verdict) stay.
+
+Update the JSON schema comments accordingly — remove the heroSub section and its $note.
+
+The existing pickRandom logic for heroSub in report.js should also be removed — leave the other pickRandom calls untouched.
+
+EDGE CASES TO TEST
+
+1. Fresh install, total = 0: empty state shows, new stat does NOT render (null return)
+2. Total > 0 but only 1 event captured: totalMinutes = 1, Y = 1, Z = 30 (single-session minimum). Sentence reads "In 1 minute on AI sites, your browser sent 1 request. That's one every 30 seconds." — grammatically awkward ("1 request" singular vs template "requests" plural) → handle pluralization: if Y === 1 use "1 request" else "{Y} requests"
+3. Very noisy session (1000 events in 5 minutes): totalMinutes ≈ 5, Z < 1 → "one every 0.3 seconds"
+4. Very sparse across 10 days: totalMinutes might be small if only brief visits, Z could be large → covered by the > 300s branch
+
+VERIFY
+
+After implementation, run the report and tell me:
+1. The exact sentence rendered with your current real data
+2. The intermediate values: totalMinutes, totalRequests, secondsPerRequest, sessionCount
+3. Edge case walkthrough: what would the sentence read if totalRequests were 1, or if secondsPerRequest were 90 (> 60s branch)?
+
+Do NOT commit yet.
