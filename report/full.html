@@ -16,16 +16,16 @@
     <section class="page page-cover">
       <header class="cover-masthead">
         <span class="title-mark">Over Your Shoulder</span>
-        <span class="date-generated" id="date-generated">19 April 2026</span>
+        <span class="date-generated">{dateLongUpper}</span>
       </header>
 
       <div class="cover-hero">
         <div class="cover-hero-top">
           <p class="cover-subtitle">Your personal data exposure report</p>
-          <p class="cover-hero-number" id="hero-number">2,060</p>
+          <p class="cover-hero-number">{totalRequestsFormatted}</p>
         </div>
         <p class="cover-caption">Requests your browser has sent to AI servers</p>
-        <p class="cover-caption-sub" id="cover-caption-sub">One request every 7 seconds of active AI use.</p>
+        <p class="cover-caption-sub">One request every {secondsPerRequest} seconds of active AI use.</p>
       </div>
 
       <nav class="toc">
@@ -46,81 +46,130 @@
     <section class="page page-overlooked">
       <h1 class="h1">What was overlooked today</h1>
       <div class="narrative">
-        <p>Here is what your browser did today. It sent its first request to an AI service at {firstTimeToday}, and its last at {lastTimeToday}. In between, you used {vendorList}. Every time you opened a conversation, scrolled back through a previous one, or left a tab sitting quietly in the background, your browser kept sending messages.</p>
-        <p>Lorem ipsum dolor sit amet, consectetur adipiscing elit. Sed do eiusmod tempor incididunt ut labore et dolore magna aliqua. Ut enim ad minim veniam, quis nostrud exercitation ullamco laboris nisi ut aliquip ex ea commodo consequat. Duis aute irure dolor in reprehenderit in voluptate velit esse cillum dolore eu fugiat nulla pariatur.</p>
-        <p>Excepteur sint occaecat cupidatat non proident, sunt in culpa qui officia deserunt mollit anim id est laborum. Sed ut perspiciatis unde omnis iste natus error sit voluptatem accusantium doloremque laudantium, totam rem aperiam, eaque ipsa quae ab illo inventore veritatis et quasi architecto beatae vitae dicta sunt explicabo.</p>
-        <p>Nemo enim ipsam voluptatem quia voluptas sit aspernatur aut odit aut fugit, sed quia consequuntur magni dolores eos qui ratione voluptatem sequi nesciunt. Neque porro quisquam est, qui dolorem ipsum quia dolor sit amet, consectetur, adipisci velit, sed quia non numquam eius modi tempora incidunt ut labore et dolore.</p>
-        <p>At vero eos et accusamus et iusto odio dignissimos ducimus qui blanditiis praesentium voluptatum deleniti atque corrupti quos dolores et quas molestias excepturi sint occaecati cupiditate non provident, similique sunt in culpa qui officia deserunt mollitia animi, id est laborum et dolorum fuga.</p>
-        <p>Et harum quidem rerum facilis est et expedita distinctio. Nam libero tempore, cum soluta nobis est eligendi optio cumque nihil impedit quo minus id quod maxime placeat facere possimus, omnis voluptas assumenda est. The next pages explain what this volume means, where these numbers come from, and what they do not show.</p>
+        <p>Here is what your browser did today.</p>
+        <p>It sent its first request to an AI service at {firstTimeToday}, and its last at {lastTimeToday}. In between, you used {vendorList}. Every time you opened a conversation, scrolled back through a previous one, or left a tab sitting quietly in the background, your browser kept sending messages. {totalRequestsToday} of them.</p>
+        <p>Not all of these messages were necessary. A chat interface like ChatGPT or Claude streams its answer word by word, which means hundreds of requests per response. It also sends telemetry about your scrolling, idle time, and which model you are using. A live conversation, even a short one, generates a lot of traffic. What is harder to justify is the activity when you are not actively chatting — background sync, session pings, analytics beacons, suggestions you did not ask for. Those happen whether your tab is in focus or not. Over the course of a day, they add up.</p>
+        <p>Physically, where did those messages go? {cityBreakdown}. {countrySummary}</p>
+        <p>You were actively engaged with AI tools for about {minutesActive} minutes today. That is the time you spent typing, waiting, reading answers. Your browser, during those same {minutesActive} minutes, was sending requests non-stop. One every {secondsPerRequest} seconds, on average. Some seconds it sent several.</p>
+        <p>The next pages explain what this volume means, where these numbers come from, and what they do not show.</p>
       </div>
       <div class="page-number">02 / 08</div>
     </section>
 
     <!-- ============================================================
-         PAGE 3 — The numbers behind the number  (full mode: 2x2)
+         PAGE 3 — The numbers behind the number
          ============================================================ -->
     <section class="page page-numbers">
       <h1 class="h1">The numbers behind the number</h1>
 
-      <div class="blocks-grid">
-        <div class="block">
-          <h3 class="h3">Who received your data</h3>
-          <div class="block-chart chart-vendors">
-            <span class="block-chart-label">Chart: Vendors bar chart<br />(to be implemented in phase 05.4)</span>
-          </div>
-          <p class="block-legend">Lorem ipsum dolor sit amet, consectetur adipiscing elit.</p>
-          <div class="block-microlist">Total vendors contacted        —
-Top vendor share               —%
-Top vs. second vendor ratio    —x
+      <div data-variant-group="mode">
+        <!-- FULL MODE: 2x2 grid of 4 blocks -->
+        <div data-variant-if="full">
+          <div class="blocks-grid">
+
+            <div class="block">
+              <h3 class="h3">Who received your data</h3>
+              <div class="block-chart chart-vendors">
+                <span class="block-chart-label">Chart: Vendors bar chart<br />(to be implemented in phase 05.4)</span>
+              </div>
+              <div data-variant-group="vendor-legend">
+                <p class="block-legend" data-variant-if="mono">All your AI activity went to a single service. {vendorName} now holds a complete picture of what you asked about today.</p>
+                <p class="block-legend" data-variant-if="multi">{vendorCount} services received your browser's requests today. {topVendorName} accounts for {topVendorShare}% of the total, followed by {secondVendorName} at {secondVendorShare}%.</p>
+              </div>
+              <div class="block-microlist">Total vendors contacted        {vendorCount}
+Top vendor share               {topVendorShare}%
+Top vs. second vendor ratio    {topToSecondRatio}
 </div>
+            </div>
+
+            <div class="block">
+              <h3 class="h3">When your browser was talking</h3>
+              <div class="block-chart chart-hourly">
+                <span class="block-chart-label">Chart: Hourly histogram<br />(to be implemented in phase 05.4)</span>
+              </div>
+              <div data-variant-group="hourly-legend">
+                <p class="block-legend" data-variant-if="standard">Your browser's busiest hour today was around {peakHour}, with {peakHourRequests} requests. It was quiet during {idleHours} hours of the day.</p>
+                <p class="block-legend" data-variant-if="concentrated">Your browser's activity concentrated between {startHour} and {endHour}, with its busiest moment at {peakHour}.</p>
+              </div>
+              <div class="block-microlist">First activity of the day      {firstActivityTime}
+Last activity of the day       {lastActivityTime}
+Peak hour                      {peakHour}
+Peak hour volume               {peakHourRequests}
+Quiet hours                    {idleHours}
+Daytime / nighttime ratio      {dayNightRatio}
+</div>
+            </div>
+
+            <div class="block">
+              <h3 class="h3">How your score has moved</h3>
+              <div class="block-chart chart-score">
+                <span class="block-chart-label">Chart: Score evolution curve<br />(to be implemented in phase 05.4)</span>
+              </div>
+              <p class="block-legend">Your score has moved between {minScore} and {maxScore} over the past {daysObserved} days. Today it sits at {todayScore}, {todayVsAvg}.</p>
+              <div class="block-microlist">Today's score                  {todayScore} / 100
+Average over period            {avgScore}
+Lowest recorded                {minScore}   on {minScoreDate}
+Highest recorded               {maxScore}   on {maxScoreDate}
+Trend                          {trendLabel}
+</div>
+            </div>
+
+            <div class="block">
+              <h3 class="h3">Everywhere your data went</h3>
+              <div class="block-chart chart-map">
+                <span class="block-chart-label">Chart: Enriched world map<br />(to be implemented in phase 05.4)</span>
+              </div>
+              <p class="block-legend">Your data reached {cityCount} cities across {countryCount} countries today. The farthest destination was {farthestCity}, at roughly {distanceKm} kilometers.</p>
+              <div class="block-microlist">Cities contacted                    {cityCount}
+Countries contacted                 {countryCount}
+Timezones crossed                   {timezoneCount}
+Cross-border traffic                {percentCrossingBorders}%
+Farthest destination                {farthestCity} ({distanceKm} km)
+Total distance traveled             {totalDistanceKm} km
+Countries outside your home         {foreignCountryCount}
+</div>
+            </div>
+          </div>
         </div>
 
-        <div class="block">
-          <h3 class="h3">When your browser was talking</h3>
-          <div class="block-chart chart-hourly">
-            <span class="block-chart-label">Chart: Hourly histogram<br />(to be implemented in phase 05.4)</span>
-          </div>
-          <p class="block-legend">Lorem ipsum dolor sit amet consectetur adipiscing elit.</p>
-          <div class="block-microlist">First activity of the day      —
-Last activity of the day       —
-Peak hour                      —
-Peak hour volume               —
-Quiet hours                    —
-Daytime / nighttime ratio      —
+        <!-- LIGHT MODE: 2 blocks + pedagogical note -->
+        <div data-variant-if="light">
+          <div class="blocks-grid light-mode">
+            <div class="block block-tall">
+              <h3 class="h3">Who received your data</h3>
+              <div class="block-chart chart-vendors chart-tall">
+                <span class="block-chart-label">Chart: Vendors bar chart<br />(to be implemented in phase 05.4)</span>
+              </div>
+              <div data-variant-group="vendor-legend">
+                <p class="block-legend" data-variant-if="mono">All your AI activity went to a single service. {vendorName} now holds a complete picture of what you asked about today.</p>
+                <p class="block-legend" data-variant-if="multi">{vendorCount} services received your browser's requests today. {topVendorName} accounts for {topVendorShare}% of the total, followed by {secondVendorName} at {secondVendorShare}%.</p>
+              </div>
+              <div class="block-microlist">Total vendors contacted        {vendorCount}
+Top vendor share               {topVendorShare}%
+Top vs. second vendor ratio    {topToSecondRatio}
 </div>
-        </div>
+            </div>
 
-        <div class="block">
-          <h3 class="h3">How your score has moved</h3>
-          <div class="block-chart chart-score">
-            <span class="block-chart-label">Chart: Score evolution curve<br />(to be implemented in phase 05.4)</span>
-          </div>
-          <p class="block-legend">Lorem ipsum dolor sit amet consectetur elit.</p>
-          <div class="block-microlist">Today's score                  — / 100
-Average over period            —
-Lowest recorded                —   on —
-Highest recorded               —   on —
-Trend                          —
+            <div class="block block-tall">
+              <h3 class="h3">Everywhere your data went</h3>
+              <div class="block-chart chart-map chart-tall">
+                <span class="block-chart-label">Chart: Enriched world map<br />(to be implemented in phase 05.4)</span>
+              </div>
+              <p class="block-legend">Your data reached {cityCount} cities across {countryCount} countries today. The farthest destination was {farthestCity}, at roughly {distanceKm} kilometers.</p>
+              <div class="block-microlist">Cities contacted               {cityCount}
+Countries contacted            {countryCount}
+Cross-border traffic           {percentCrossingBorders}%
 </div>
-        </div>
+            </div>
+          </div>
 
-        <div class="block">
-          <h3 class="h3">Everywhere your data went</h3>
-          <div class="block-chart chart-map">
-            <span class="block-chart-label">Chart: Enriched world map<br />(to be implemented in phase 05.4)</span>
+          <div class="pedagogical-note">
+            <p>Two more charts will appear on this page once your browser has had more conversations with AI services. A distribution of its activity across the hours of the day, and the evolution of your exposure score over time. This report will unlock the full view after 3 days and 500 requests captured. None of this data leaves your device — OpenAI, Google, and the others already have their copy.</p>
+            <p class="pedagogical-state">Current state: {daysObserved} days observed, {totalRequests} requests captured.</p>
           </div>
-          <p class="block-legend">Lorem ipsum dolor sit amet consectetur adipiscing elit.</p>
-          <div class="block-microlist">Cities contacted               —
-Countries contacted            —
-Timezones crossed              —
-Cross-border traffic           —%
-Farthest destination           —
-Total distance traveled        — km
-</div>
         </div>
       </div>
 
-      <!-- Alternative light mode to be implemented in phase 05.2 -->
       <div class="page-number">03 / 08</div>
     </section>
 
@@ -130,45 +179,58 @@ Total distance traveled        — km
     <!-- NOTE: this page may overflow with current placeholders. Will be tuned with real content in phase 05.2. -->
     <section class="page page-score">
       <h1 class="h1">Understanding the score</h1>
-      <p>Lorem ipsum dolor sit amet, consectetur adipiscing elit. Sed do eiusmod tempor incididunt ut labore et dolore magna aliqua. Ut enim ad minim veniam, quis nostrud exercitation ullamco laboris nisi ut aliquip ex ea commodo consequat. Duis aute irure dolor in reprehenderit in voluptate velit esse cillum dolore eu fugiat nulla pariatur excepteur sint occaecat.</p>
+      <p>The score from 0 to 100 shown on the cover is not a verdict. It is a composite of four separate measurements, each reflecting a different kind of data exposure risk. A score of 45 can come from very different situations: heavy volume with narrow geography, or sparse volume sent to many jurisdictions. This page explains what each measurement means, how it is computed, and where your numbers fall.</p>
 
       <div class="score-section">
         <h3 class="h3">Volume</h3>
-        <p>Lorem ipsum dolor sit amet, consectetur adipiscing elit. Sed do eiusmod tempor incididunt ut labore et dolore magna aliqua. Ut enim ad minim veniam, quis nostrud exercitation ullamco laboris nisi ut aliquip ex ea commodo consequat. Duis aute irure dolor in reprehenderit in voluptate velit esse cillum dolore eu fugiat nulla pariatur. Excepteur sint occaecat cupidatat non proident.</p>
-        <div class="score-microblock">Your contribution     — / 30
-Your daily average    — requests
-Percentile            —% of observed days exceed this
+        <p>How many requests your browser sent to AI services. More is not always worse, but volume matters: each request carries metadata about what you are doing, even when its body contains no sensitive text. Your browser currently averages {avgDailyRequests} requests per day of observed activity. Volume caps at 30 points, reached gradually on a logarithmic scale — going from 100 to 1,000 requests per day adds fewer points than going from 10 to 100.</p>
+        <div class="score-microblock">Your contribution     {volumeScore} / 30
+Your daily average    {avgDailyRequests} requests
+Percentile            {volumePercentile}% of observed days exceed this
 </div>
       </div>
       <hr class="rule" />
 
       <div class="score-section">
         <h3 class="h3">Categories</h3>
-        <p>Lorem ipsum dolor sit amet, consectetur adipiscing elit. Sed do eiusmod tempor incididunt ut labore et dolore magna aliqua. Ut enim ad minim veniam, quis nostrud exercitation ullamco laboris nisi ut aliquip ex ea commodo consequat. Duis aute irure dolor in reprehenderit in voluptate velit esse cillum dolore eu fugiat nulla pariatur. Excepteur sint occaecat cupidatat non proident.</p>
-        <div class="score-microblock">Your contribution      — / 30
-Categories touched     — : —
+        <div data-variant-group="categories-section">
+          <p data-variant-if="standard">Different kinds of sites generate different kinds of AI traffic. A request from your email client carries different information than a request from a code editor. This factor measures how many distinct sensitive categories your AI usage touches: email, code, documents, communications, finance, professional platforms, and others. So far you have touched {categoriesCount} of the seven tracked categories: {categoriesList}. Each category contributes 5 points, capped at 30.</p>
+          <p data-variant-if="empty">Different kinds of sites generate different kinds of AI traffic. A request from your email client carries different information than a request from a code editor. This factor measures how many distinct sensitive categories your AI usage touches: email, code, documents, communications, finance, professional platforms, and others. So far your AI usage has not originated from any of the seven tracked categories. Your traffic comes from sites classified as generic. Each category contributes 5 points, capped at 30, so this factor currently contributes zero.</p>
+        </div>
+        <div class="score-microblock">Your contribution      {categoriesScore} / 30
+Categories touched     {categoriesCount}: {categoriesList}
 </div>
       </div>
       <hr class="rule" />
 
       <div class="score-section">
         <h3 class="h3">Geography</h3>
-        <p>Lorem ipsum dolor sit amet, consectetur adipiscing elit. Sed do eiusmod tempor incididunt ut labore et dolore magna aliqua. Ut enim ad minim veniam, quis nostrud exercitation ullamco laboris nisi ut aliquip ex ea commodo consequat. Duis aute irure dolor in reprehenderit in voluptate velit esse cillum dolore eu fugiat nulla pariatur. Excepteur sint occaecat cupidatat non proident.</p>
-        <div class="score-microblock">Your contribution           — / 25
-Top destination country     — (—%)
-Cross-border share          —%
+        <div data-variant-group="geography">
+          <p data-variant-if="multiCountry">Where your data physically goes. A request that stays within your country falls under your local privacy laws. A request that crosses borders falls under the laws of the destination country — and, in some cases, under extraterritorial laws that extend beyond it. The US CLOUD Act, for example, allows US authorities to request data held by American companies regardless of where the user lives. {percentCrossingBorders}% of your requests today crossed a national border, with {topCountry} receiving the largest share at {topCountryShare}%. This factor caps at 25 points, weighted by the regulatory environment of each destination.</p>
+          <p data-variant-if="allDomestic">Where your data physically goes. A request that stays within your country falls under your local privacy laws. Today, all of your AI traffic stayed within {countryName}. This is rare: most users see most of their data routed abroad. Your Geography score reflects this concentration — you are exposed to a single jurisdiction rather than many. This factor caps at 25 points, weighted by the regulatory environment of each destination.</p>
+          <p data-variant-if="allForeign">Where your data physically goes. A request that stays within your country falls under your local privacy laws. Today, 100% of your AI traffic went to a single foreign country: {topCountry}. No request stayed within {countryName}. This factor caps at 25 points, weighted by the regulatory environment of each destination.</p>
+        </div>
+        <div class="score-microblock">Your contribution           {geographyScore} / 25
+Top destination country     {topCountry} ({topCountryShare}%)
+Cross-border share          {crossBorderShare}%
 </div>
       </div>
       <hr class="rule" />
 
       <div class="score-section">
         <h3 class="h3">Continuity</h3>
-        <p>Lorem ipsum dolor sit amet, consectetur adipiscing elit. Sed do eiusmod tempor incididunt ut labore et dolore magna aliqua. Ut enim ad minim veniam, quis nostrud exercitation ullamco laboris nisi ut aliquip ex ea commodo consequat. Duis aute irure dolor in reprehenderit in voluptate velit esse cillum dolore eu fugiat nulla pariatur. Excepteur sint occaecat cupidatat non proident.</p>
-        <div class="score-microblock">Your contribution     — / 15
-Days observed         — of 7 needed for full score
-Current pace          —
+        <div data-variant-group="continuity">
+          <p data-variant-if="standard">A single day of heavy exposure is different from weeks of steady exposure. This factor rewards — in the sense of raising the score — consistent daily usage over time. It reaches its maximum of 15 points after 7 days of regular activity. You have been observed for {daysObserved} days, currently on pace {continuityTrend}. The logic is that continuous profiling is harder to escape than a one-off event.</p>
+          <p data-variant-if="firstDay">A single day of heavy exposure is different from weeks of steady exposure. This factor rewards consistent daily usage over time. It reaches its maximum of 15 points after 7 days of regular activity. This is your first day of observed activity. Continuity will build up over the next six days. The logic is that continuous profiling is harder to escape than a one-off event.</p>
+        </div>
+        <div class="score-microblock">Your contribution     {continuityScore} / 15
+Days observed         {daysObserved} of 7 needed for full score
+Current pace          {continuityTrend}
 </div>
       </div>
+
+      <p class="score-closing">These four factors add up to your total score, capped at 100. Each factor is independent: maxing out one does not affect the others. The score's purpose is not to pass judgment but to summarize exposure across dimensions that are otherwise easy to overlook.</p>
+
       <div class="page-number">04 / 08</div>
     </section>
 
@@ -178,7 +240,7 @@ Current pace          —
     <!-- NOTE: this page may overflow with current placeholders. Will be tuned with real content in phase 05.2. -->
     <section class="page page-sees">
       <h1 class="h1">What this report sees, and what it does not</h1>
-      <p>Lorem ipsum dolor sit amet, consectetur adipiscing elit. Sed do eiusmod tempor incididunt ut labore et dolore magna aliqua. Ut enim ad minim veniam, quis nostrud exercitation ullamco laboris nisi ut aliquip ex ea commodo consequat. Duis aute irure dolor in reprehenderit in voluptate velit esse cillum dolore eu fugiat nulla pariatur.</p>
+      <p>Every number in this report comes from your browser. None comes from the AI services themselves, from an external server, or from any remote database. The extension observes outbound requests as they leave your browser, records a few fields of metadata, and discards the rest. This page describes precisely what is recorded and what is not, so that the numbers above can be interpreted correctly.</p>
 
       <h3 class="h3">What OYS records</h3>
       <div class="records-table">
@@ -186,11 +248,11 @@ Current pace          —
         <div class="th">Used for</div>
         <div>Timestamp</div><div>When the request was sent</div>
         <div>Destination hostname</div><div>Which service received the request</div>
-        <div>Destination path</div><div>Category inference</div>
+        <div>Destination path (truncated)</div><div>Category inference (email, code, etc.)</div>
         <div>Tab identifier</div><div>Counting requests per session</div>
         <div>Source site</div><div>The page that initiated the request</div>
       </div>
-      <p>Lorem ipsum dolor sit amet, consectetur adipiscing elit. Sed do eiusmod tempor incididunt ut labore et dolore magna aliqua. Ut enim ad minim veniam, quis nostrud exercitation ullamco laboris nisi ut aliquip ex ea commodo consequat.</p>
+      <p>These five fields are stored locally, in your browser, in the extension's own private storage. They are flushed to disk every 30 seconds and rotated out after 30 days. The service worker never connects to any external endpoint — neither to us, nor to any third party.</p>
 
       <h3 class="h3">What OYS does not record</h3>
       <div class="records-table">
@@ -202,16 +264,17 @@ Current pace          —
         <div>Cookies</div><div>Out of reach of the API used</div>
         <div>Session identifiers</div><div>Not captured</div>
         <div>File attachments</div><div>Not inspected</div>
-        <div>Full URL with query params</div><div>Only truncated path is kept</div>
+        <div>Full URL with query parameters</div><div>Only truncated path is kept</div>
         <div>IP addresses</div><div>Not captured</div>
       </div>
-      <p>Lorem ipsum dolor sit amet, consectetur adipiscing elit. Sed do eiusmod tempor incididunt ut labore et dolore magna aliqua. Ut enim ad minim veniam, quis nostrud exercitation ullamco laboris nisi ut aliquip ex ea commodo consequat.</p>
+      <p>The extension uses Chrome's webRequest API in observation mode only. It cannot read encrypted request bodies, it does not decrypt network traffic, and it has no access to the actual content of your conversations. What a chat is about, what answer was received, whether a file was uploaded — all of this stays between you and the AI service. OYS never learns any of it.</p>
 
       <h3 class="h3">How the numbers are computed</h3>
-      <p>Lorem ipsum dolor sit amet, consectetur adipiscing elit. Sed do eiusmod tempor incididunt ut labore et dolore magna aliqua. Ut enim ad minim veniam, quis nostrud exercitation ullamco laboris nisi ut aliquip ex ea commodo consequat. Duis aute irure dolor in reprehenderit.</p>
+      <p>The total request count is a literal count of observed events. It is not an estimate. The country attribution is derived from a local table that maps each AI service's known hosting location — for example, OpenAI's infrastructure is primarily in San Francisco, Mistral's in Paris, DeepSeek's in Beijing. This mapping is based on public information about where each company hosts its services. It is not based on your IP address, nor on the physical path your requests actually travel. If your traffic is routed through a VPN, or through a CDN edge node somewhere else, OYS still reports the declared hosting location, not the path. This is a deliberate choice: the question this report answers is where the AI service lives, not where the packets physically went.</p>
 
       <h3 class="h3">Limits of this measurement</h3>
-      <p>Lorem ipsum dolor sit amet, consectetur adipiscing elit. Sed do eiusmod tempor incididunt ut labore et dolore magna aliqua. Ut enim ad minim veniam, quis nostrud exercitation ullamco laboris nisi ut aliquip ex ea commodo consequat.</p>
+      <p>This report captures the shape of your AI activity: how often, where, in what rhythm. It does not capture the substance: what you asked, what was answered, whether any of it was sensitive. A single thoughtful question about your medical history is invisible to OYS and would not raise your score. A thousand trivial queries about restaurant recommendations would. Volume is not a proxy for sensitivity. This is a deliberate limit of the tool — inspecting content would require reading your messages, which would be a worse privacy violation than anything this report could describe. OYS measures the surface of exposure, not its content. Interpret the numbers accordingly.</p>
+
       <div class="page-number">05 / 08</div>
     </section>
 
@@ -220,13 +283,13 @@ Current pace          —
          ============================================================ -->
     <section class="page page-rules">
       <h1 class="h1">The rules that follow your data</h1>
-      <p>Lorem ipsum dolor sit amet, consectetur adipiscing elit. Sed do eiusmod tempor incididunt ut labore et dolore magna aliqua. Ut enim ad minim veniam, quis nostrud exercitation ullamco laboris nisi ut aliquip ex ea commodo consequat. Duis aute irure dolor.</p>
+      <p>Where your data goes determines which laws apply to it. A request sent from Zurich to San Francisco does not simply travel across the ocean — it crosses a legal boundary, and once it lands, it falls under the jurisdiction of the country that hosts it. This page outlines the main legal frameworks that shape what happens to your AI data once it leaves your browser. It is not legal advice. It is context, with links to primary sources.</p>
 
       <div class="rule-block">
         <div class="rule-number">01</div>
         <div class="rule-body">
           <h3 class="h3">The US CLOUD Act</h3>
-          <p>The <a href="#">CLOUD Act</a> is an American law passed in 2018. Lorem ipsum dolor sit amet, consectetur adipiscing elit. Sed do eiusmod tempor incididunt ut labore et dolore magna aliqua. Ut enim ad minim veniam, quis nostrud exercitation ullamco laboris nisi ut aliquip ex ea commodo consequat. Duis aute irure dolor in reprehenderit.</p>
+          <p>The <a href="https://www.justice.gov/criminal/cloud-act-resources" target="_blank" rel="noopener">CLOUD Act</a> is an American law passed in 2018. It allows US authorities to compel American companies to hand over data they hold, regardless of where that data is physically stored. If OpenAI operates a data center in Ireland, the servers are in Ireland, but the company is American — and American authorities can require access. This is why {topDestinationShare}% of your traffic going to the United States is not only a geographic fact but a jurisdictional one. The law that can access this data is American, even if the data never sat on American soil.</p>
         </div>
       </div>
 
@@ -234,15 +297,15 @@ Current pace          —
         <div class="rule-number">02</div>
         <div class="rule-body">
           <h3 class="h3">The GDPR and Swiss equivalents</h3>
-          <p>In Europe, the <a href="#">General Data Protection Regulation</a> applies to any processing of personal data. Lorem ipsum dolor sit amet, consectetur adipiscing elit. Switzerland has a closely aligned framework, the <a href="#">revised Federal Act on Data Protection</a>, in force since September 2023.</p>
+          <p>In Europe, the <a href="https://eur-lex.europa.eu/eli/reg/2016/679/oj" target="_blank" rel="noopener">General Data Protection Regulation (GDPR)</a> applies to any processing of personal data of individuals located in the European Union. Switzerland has a closely aligned framework, the <a href="https://www.edoeb.admin.ch/edoeb/en/home/data-protection.html" target="_blank" rel="noopener">revised Federal Act on Data Protection (nFADP)</a>, in force since September 2023. Both laws consider the transfer of personal data to a third country — including to the United States — as a regulated operation. The consent framework is narrow, and the compliance burden rests on the service provider, not on the user. When you send a prompt to a US-based AI service, you are initiating a transfer that falls under these rules.</p>
         </div>
       </div>
 
       <div class="rule-block">
         <div class="rule-number">03</div>
         <div class="rule-body">
-          <h3 class="h3">Schrems II and Privacy Shield</h3>
-          <p>In 2020, the <a href="#">Court of Justice of the European Union ruled</a> that the Privacy Shield agreement between the EU and the US was invalid. Lorem ipsum dolor sit amet, consectetur adipiscing elit. Sed do eiusmod tempor incididunt ut labore et dolore magna aliqua.</p>
+          <h3 class="h3">Schrems II and the invalidation of Privacy Shield</h3>
+          <p>In 2020, the <a href="https://curia.europa.eu/juris/liste.jsf?num=C-311/18" target="_blank" rel="noopener">Court of Justice of the European Union ruled, in the case known as Schrems II</a>, that the Privacy Shield agreement between the EU and the US was invalid. The court found that American surveillance laws provided insufficient protection for European data. The decision left most transfers of personal data to the US in a legal grey area, patched partially by a <a href="https://commission.europa.eu/law/law-topic/data-protection/international-dimension-data-protection/eu-us-data-transfers_en" target="_blank" rel="noopener">successor agreement in 2023</a>. The underlying question remains unresolved: European data on American servers can, in principle, be accessed by American intelligence services under laws that would not pass muster in Europe.</p>
         </div>
       </div>
 
@@ -250,7 +313,10 @@ Current pace          —
         <div class="rule-number">04</div>
         <div class="rule-body">
           <h3 class="h3">China and the Cybersecurity Law</h3>
-          <p>Chinese AI services operate under a different legal framework. The <a href="#">Cybersecurity Law of 2017</a> and the <a href="#">Data Security Law of 2021</a> require companies to store data domestically. Lorem ipsum dolor sit amet, consectetur adipiscing elit.</p>
+          <div data-variant-group="china">
+            <p data-variant-if="hasChina">Chinese AI services — DeepSeek, Kimi, Qwen, and others — operate under a different legal framework. The <a href="http://www.npc.gov.cn/zgrdw/englishnpc/Law/2007-12/13/content_1384096.htm" target="_blank" rel="noopener">Cybersecurity Law of 2017</a> and the <a href="http://www.npc.gov.cn/englishnpc/c23934/202112/1abd8829788946ecab270e469b13c39c.shtml" target="_blank" rel="noopener">Data Security Law of 2021</a> require companies operating in China to store data of Chinese users domestically, and to cooperate with state authorities on request. Unlike in the US or the EU, there is no meaningful judicial review of such requests. For a European or Swiss user, sending a prompt to a Chinese AI service is a one-way transfer into a jurisdiction where the concept of data subject rights does not functionally exist. {percentToChina}% of your traffic today went to Chinese services. The data is unlikely to come back.</p>
+            <p data-variant-if="noChina">Chinese AI services — DeepSeek, Kimi, Qwen, and others — operate under a different legal framework. The <a href="http://www.npc.gov.cn/zgrdw/englishnpc/Law/2007-12/13/content_1384096.htm" target="_blank" rel="noopener">Cybersecurity Law of 2017</a> and the <a href="http://www.npc.gov.cn/englishnpc/c23934/202112/1abd8829788946ecab270e469b13c39c.shtml" target="_blank" rel="noopener">Data Security Law of 2021</a> require companies operating in China to store data of Chinese users domestically, and to cooperate with state authorities on request. Unlike in the US or the EU, there is no meaningful judicial review of such requests. Your traffic today did not reach Chinese services, but this is a rule to keep in mind: some widely-used AI tools, especially newer entrants, are based in China. A single prompt sent there follows these rules.</p>
+          </div>
         </div>
       </div>
 
@@ -258,9 +324,10 @@ Current pace          —
         <div class="rule-number">05</div>
         <div class="rule-body">
           <h3 class="h3">Residency versus access</h3>
-          <p>Two questions are often confused: where is the data stored, and who can access it? Lorem ipsum dolor sit amet, consectetur adipiscing elit. Sed do eiusmod tempor incididunt ut labore et dolore magna aliqua.</p>
+          <p>Two questions are often confused: where is the data stored, and who can access it? A European data center operated by an American company does not, by itself, remove the data from American jurisdiction. Conversely, data stored in the United States but owned by a European company remains under European contractual obligations. For AI services, the question to ask is not only "where are the servers?" but "who owns the company that operates them, and under what law do they answer requests for data?" This report maps the first question. The second is yours to investigate.</p>
         </div>
       </div>
+
       <div class="page-number">06 / 08</div>
     </section>
 
@@ -269,23 +336,24 @@ Current pace          —
          ============================================================ -->
     <section class="page page-glossary">
       <h1 class="h1">A short glossary</h1>
-      <p>Lorem ipsum dolor sit amet, consectetur adipiscing elit. The terms below appear throughout this report. Definitions are kept brief and specific to how OYS uses them.</p>
+      <p>The terms below appear throughout this report. Definitions are kept brief and specific to how OYS uses them.</p>
 
       <div class="glossary">
-        <div class="glossary-entry"><strong>AI service</strong> — Lorem ipsum dolor sit amet, consectetur adipiscing elit. Sed do eiusmod tempor incididunt ut labore et dolore magna aliqua.</div>
-        <div class="glossary-entry"><strong>API (Application Programming Interface)</strong> — Lorem ipsum dolor sit amet, consectetur adipiscing elit. Sed do eiusmod tempor incididunt ut labore.</div>
-        <div class="glossary-entry"><strong>Category</strong> — Lorem ipsum dolor sit amet, consectetur adipiscing elit. Sed do eiusmod tempor incididunt ut labore et dolore.</div>
-        <div class="glossary-entry"><strong>Cross-border request</strong> — Lorem ipsum dolor sit amet, consectetur adipiscing elit. Sed do eiusmod tempor incididunt ut labore.</div>
-        <div class="glossary-entry"><strong>Endpoint</strong> — Lorem ipsum dolor sit amet, consectetur adipiscing elit. Sed do eiusmod tempor incididunt ut labore et dolore magna aliqua.</div>
-        <div class="glossary-entry"><strong>Exposure score</strong> — Lorem ipsum dolor sit amet, consectetur adipiscing elit. Sed do eiusmod tempor incididunt ut labore et dolore.</div>
-        <div class="glossary-entry"><strong>Hostname</strong> — Lorem ipsum dolor sit amet, consectetur adipiscing elit. Sed do eiusmod tempor incididunt ut labore et dolore.</div>
-        <div class="glossary-entry"><strong>Metadata</strong> — Lorem ipsum dolor sit amet, consectetur adipiscing elit. Sed do eiusmod tempor incididunt ut labore et dolore magna aliqua.</div>
-        <div class="glossary-entry"><strong>Request</strong> — Lorem ipsum dolor sit amet, consectetur adipiscing elit. Sed do eiusmod tempor incididunt ut labore et dolore magna aliqua.</div>
-        <div class="glossary-entry"><strong>Session</strong> — Lorem ipsum dolor sit amet, consectetur adipiscing elit. Sed do eiusmod tempor incididunt ut labore et dolore magna aliqua.</div>
-        <div class="glossary-entry"><strong>Streaming</strong> — Lorem ipsum dolor sit amet, consectetur adipiscing elit. Sed do eiusmod tempor incididunt ut labore et dolore magna aliqua.</div>
-        <div class="glossary-entry"><strong>Vendor</strong> — Lorem ipsum dolor sit amet, consectetur adipiscing elit. Sed do eiusmod tempor incididunt ut labore et dolore magna.</div>
-        <div class="glossary-entry"><strong>Web interface</strong> — Lorem ipsum dolor sit amet, consectetur adipiscing elit. Sed do eiusmod tempor incididunt ut labore et dolore magna aliqua.</div>
+        <div class="glossary-entry"><strong>AI service</strong> — Any platform or application that provides access to a large language model or similar AI capabilities, whether through a web interface, a desktop app, or an API. Examples in this report include ChatGPT, Claude, Gemini, Mistral, DeepSeek, and Perplexity.</div>
+        <div class="glossary-entry"><strong>API (Application Programming Interface)</strong> — A technical interface that allows software to communicate with an AI service directly, without a human-facing website. Requests made through an API have the same data exposure consequences as requests made through a web interface. OYS detects both.</div>
+        <div class="glossary-entry"><strong>Category</strong> — A type of site from which an AI request originates. OYS recognizes seven categories: email, code, documents, communications, finance, professional platforms, and other. The score's Categories factor rewards diversity of exposure across these types.</div>
+        <div class="glossary-entry"><strong>Cross-border request</strong> — A request whose destination country is different from the user's declared country. If the user is in Switzerland and the request goes to a US-hosted service, it counts as cross-border.</div>
+        <div class="glossary-entry"><strong>Endpoint</strong> — The specific network address a request is sent to. For an AI service, an endpoint is typically a URL on the service's servers, such as <span class="mono-inline">api.openai.com/v1/chat/completions</span>. OYS identifies endpoints by their hostname and path.</div>
+        <div class="glossary-entry"><strong>Exposure score</strong> — The 0-to-100 score shown on the cover of this report. It is a composite of four factors — Volume, Categories, Geography, and Continuity — each measuring a different dimension of data exposure. See page 4 for the full breakdown.</div>
+        <div class="glossary-entry"><strong>Hostname</strong> — The domain portion of a URL, such as <span class="mono-inline">chatgpt.com</span> or <span class="mono-inline">api.anthropic.com</span>. OYS uses hostnames to identify which AI service received a request.</div>
+        <div class="glossary-entry"><strong>Metadata</strong> — Data about data. In the context of this report, metadata is information about a request — when it was sent, where it went, what category of site initiated it — but not the request's actual content. OYS only processes metadata, never content.</div>
+        <div class="glossary-entry"><strong>Request</strong> — A single network message sent from your browser to a server. A typical AI conversation generates hundreds of these: the interface loads, your message is sent, the response streams back word by word, the conversation is saved, telemetry is sent in the background. Each of these steps is one or more requests.</div>
+        <div class="glossary-entry"><strong>Session</strong> — A period of continuous AI activity. OYS counts a new session whenever you pause for more than five minutes. Sessions are used to compute exposure time: scattered activity across a day may count as two or three sessions rather than one continuous stretch.</div>
+        <div class="glossary-entry"><strong>Streaming</strong> — The technique AI services use to display a response as it is being generated, rather than waiting for the full answer to be ready. Each word or small chunk is sent separately, producing dozens or hundreds of requests per single response. Streaming makes the interface feel responsive, but it also means that a single question can generate far more network traffic than a traditional web form.</div>
+        <div class="glossary-entry"><strong>Vendor</strong> — The company that operates an AI service. OpenAI is the vendor behind ChatGPT; Anthropic behind Claude; Google behind Gemini. OYS maps hostnames to vendors to produce the vendor breakdown on page 3.</div>
+        <div class="glossary-entry"><strong>Web interface</strong> — An AI service accessed through a normal browser at a standard URL, such as <span class="mono-inline">chatgpt.com</span> or <span class="mono-inline">claude.ai</span>. OYS primarily observes web interfaces. Desktop apps and mobile apps are not captured by the extension.</div>
       </div>
+
       <div class="page-number">07 / 08</div>
     </section>
 
@@ -294,36 +362,36 @@ Current pace          —
          ============================================================ -->
     <section class="page page-now">
       <h1 class="h1">And now what?</h1>
-      <p>Lorem ipsum dolor sit amet, consectetur adipiscing elit. Sed do eiusmod tempor incididunt ut labore et dolore magna aliqua. Ut enim ad minim veniam, quis nostrud exercitation ullamco laboris nisi ut aliquip ex ea commodo consequat. Duis aute irure dolor in reprehenderit in voluptate velit esse cillum dolore eu fugiat nulla pariatur.</p>
+      <p>Reading this report is not enough. Reading it and then forgetting about it is the default. Reading it and changing something — anything — is the exception. This page suggests three small directions, in increasing order of effort. None of them is required. All of them are practical.</p>
 
       <div class="action-section">
         <h3 class="h3">Know what you're agreeing to</h3>
-        <p>Lorem ipsum dolor sit amet, consectetur adipiscing elit. Sed do eiusmod tempor incididunt ut labore et dolore magna aliqua. Ut enim ad minim veniam, quis nostrud exercitation ullamco laboris nisi ut aliquip ex ea commodo consequat. Duis aute irure dolor in reprehenderit.</p>
+        <p>Every AI service has retention and training policies buried somewhere in its terms of use. Most users never read them. But the difference between a service that deletes prompts after 30 days and one that uses them to train future models is substantial. Before sending your next conversation, spend five minutes finding out how long it will be kept and what will be done with it. The answer is often surprising — sometimes reassuring, sometimes not. OpenAI, Anthropic, Google, Mistral, and others all publish these policies. Look them up. Once. It takes less time than the conversation itself.</p>
       </div>
 
       <div class="action-section">
         <h3 class="h3">Diversify, or consolidate on purpose</h3>
-        <p>Lorem ipsum dolor sit amet, consectetur adipiscing elit. Sed do eiusmod tempor incididunt ut labore et dolore magna aliqua. Ut enim ad minim veniam, quis nostrud exercitation ullamco laboris nisi ut aliquip ex ea commodo consequat.</p>
+        <p>This report may show that a single service received most of your traffic today. That concentration has a cost: one company ends up with a complete picture of what you asked about. Two patterns are defensible. Either you diversify deliberately — different services for different types of questions, so no single one sees everything — or you consolidate on purpose, knowing which company you trust most and accepting that trade-off. Both are better than drifting into concentration by accident.</p>
       </div>
 
       <div class="action-section">
         <h3 class="h3">Consider where the service lives</h3>
-        <p>Lorem ipsum dolor sit amet, consectetur adipiscing elit. Sed do eiusmod tempor incididunt ut labore et dolore magna aliqua. Ut enim ad minim veniam, quis nostrud exercitation ullamco laboris nisi ut aliquip ex ea commodo consequat.</p>
+        <p>Not all AI services run on the same legal ground. European alternatives exist — Mistral in France, Aleph Alpha in Germany, and others — and they operate under EU data protection laws rather than under the US CLOUD Act or the Chinese Cybersecurity Law. Choosing them is not a moral statement; it is a jurisdictional choice. For certain categories of data — business, legal, health — it may matter. For others — casual questions, public information — it likely doesn't. Knowing the difference is the first step.</p>
       </div>
 
       <p class="closing-note">
         <span class="lede">Over Your Shoulder is a tool for insight, not control.</span>
-        It tells you where your data goes. It does not stop it from going there. If the patterns shown in this report concern you, the right next step is to change your habits, not to install another extension. For organizations that want deeper visibility into AI-driven data flows, we are building <a href="https://my-insights.ch" target="_blank" rel="noopener">Symbiont</a>.
+        It tells you where your data goes. It does not stop it from going there. If the patterns shown in this report concern you, the right next step is to change your habits, not to install another extension. For organizations that want deeper visibility into AI-driven data flows — across teams, across tools — we are building <a href="https://my-insights.ch" target="_blank" rel="noopener">Symbiont</a>.
       </p>
 
       <div class="page-footer">
         <div>overyourshoulder.ch · contact@overyourshoulder.ch</div>
-        <div>© <span id="footer-year">2026</span> <a href="https://my-insights.ch" target="_blank" rel="noopener">My Insights</a> · Switzerland</div>
-        <div>Report generated on <span id="footer-date">19 April 2026</span> at <span id="footer-time">—</span></div>
+        <div>© {year} <a href="https://my-insights.ch" target="_blank" rel="noopener">My Insights</a> · Switzerland</div>
+        <div>Report generated on {date} at {time}</div>
       </div>
       <div class="page-number">08 / 08</div>
     </section>
 
-    <script src="full.js"></script>
+    <script type="module" src="full.js"></script>
   </body>
 </html>

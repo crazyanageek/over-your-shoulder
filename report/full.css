@@ -376,6 +376,33 @@ p {
   height: 65mm;
 }
 
+/* Light mode: 2 taller blocks side by side instead of 4 in a 2x2 grid. */
+.blocks-grid.light-mode {
+  grid-template-columns: 1fr 1fr;
+}
+.block.block-tall .block-chart.chart-tall {
+  width: 85mm;
+  height: 95mm;
+}
+
+.pedagogical-note {
+  margin-top: 8mm;
+  padding: 5mm 6mm;
+  border-left: 3px solid var(--ink-muted);
+  background: var(--chart-fill);
+  font-family: "Inter", sans-serif;
+  font-size: 10.5pt;
+  line-height: 1.55;
+  color: var(--ink);
+}
+.pedagogical-note p { margin: 0 0 3mm; }
+.pedagogical-note p:last-child { margin-bottom: 0; }
+.pedagogical-state {
+  font-family: "JetBrains Mono", Menlo, monospace;
+  font-size: 9pt;
+  color: var(--ink-muted);
+}
+
 /* =========================================================
    PAGE 4 — Understanding the score
    ========================================================= */
@@ -394,6 +421,15 @@ p {
   padding: 2.5mm 4mm;
   background: var(--chart-fill);
   border-radius: 2px;
+}
+
+/* Closing note at the bottom of page 4 (after all four score sections). */
+.score-closing {
+  margin-top: 4mm;
+  font-family: "Inter", sans-serif;
+  font-size: 10.5pt;
+  line-height: 1.55;
+  color: var(--ink);
 }
 
 /* Tighten page 4 + 5 so placeholder content fits A4 without overflow. Real
@@ -499,6 +535,12 @@ p {
 .glossary-entry strong {
   font-weight: 600;
   font-size: 11pt;
+}
+.glossary-entry .mono-inline,
+.mono-inline {
+  font-family: "JetBrains Mono", Menlo, monospace;
+  font-size: 9.5pt;
+  color: var(--ink);
 }
 
 /* =========================================================

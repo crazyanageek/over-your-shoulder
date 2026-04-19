@@ -1,0 +1,49 @@
+Two bugs found during 05.3 validation:
+
+=== BUG 1 — Number formatting uses system locale instead of English ===
+
+All numbers formatted with .toLocaleString() are rendering with non-breaking space separators (French locale) instead of commas (English).
+
+Current outputs in my console:
+  totalRequests: '1 100'
+  distanceKm: '9 400'
+  totalDistanceKm: '10 293 912'
+
+Expected outputs:
+  totalRequests: '1,100'
+  distanceKm: '9,400'
+  totalDistanceKm: '10,293,912'
+
+Fix: in full.js, find every call to .toLocaleString() and change it to .toLocaleString('en-US'). This forces comma separators regardless of the user's system locale. The report is English-only for now, so this is safe.
+
+Search-and-replace approach:
+  .toLocaleString()    →    .toLocaleString('en-US')
+  .toLocaleString(...)  →  verify each call has 'en-US' as first arg
+
+=== BUG 2 — Bad grammar when categoriesCount is 0 ===
+
+Current tokens:
+  categoriesCount: 0
+  categoriesList: 'none yet'
+
+The editorial page 4 section 2 text is:
+  "So far you have touched {categoriesCount} of the seven tracked categories: {categoriesList}."
+
+With these tokens this renders as:
+  "So far you have touched 0 of the seven tracked categories: none yet."
+
+The phrase ": none yet" after a count of 0 sounds like a placeholder leak.
+
+Fix: add a conditional variant for this section. When categoriesCount === 0, render a different sentence entirely:
+
+Standard variant (categoriesCount >= 1):
+  "Different kinds of sites generate different kinds of AI traffic. A request from your email client carries different information than a request from a code editor. This factor measures how many distinct sensitive categories your AI usage touches: email, code, documents, communications, finance, professional platforms, and others. So far you have touched {categoriesCount} of the seven tracked categories: {categoriesList}. Each category contributes 5 points, capped at 30."
+
+Zero-categories variant (categoriesCount === 0):
+  "Different kinds of sites generate different kinds of AI traffic. A request from your email client carries different information than a request from a code editor. This factor measures how many distinct sensitive categories your AI usage touches: email, code, documents, communications, finance, professional platforms, and others. So far your AI usage has not originated from any of the seven tracked categories. Your traffic comes from sites classified as generic. Each category contributes 5 points, capped at 30, so this factor currently contributes zero."
+
+Use the same data-variant-group mechanism as the other conditional sections. Variant key: "categories-section". Selector: ctx.categoriesCount === 0 → "empty", else → "standard".
+
+After both fixes, re-log the token trace in the console. I'll validate again.
+
+Do NOT commit yet — we're still validating 05.2 + 05.3 together.

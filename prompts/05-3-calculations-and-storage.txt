@@ -1,0 +1,253 @@
+Phase 05.3 — Complete the dynamic token layer for the full PDF report.
+
+This phase fills in the remaining ~14 tokens that were left as literal {tokenName} placeholders in phase 05.2. It introduces one new storage key, retroactive seeding from existing event data, a small reference table for timezones, and two prose template engines.
+
+After 05.3, all tokens in the PDF are dynamically resolved. No more literal placeholders should remain.
+
+=== REFERENCE ===
+
+Read prompts/phase-05-editorial.md for the template text of {cityBreakdown} and {countrySummary}, and for the exact formatting of {continuityTrend}, {todayVsAvg}, {trendLabel}.
+
+=== GOAL ===
+
+Complete the following tokens:
+
+Score history (requires new storage + retroactive seed):
+- {minScore}, {maxScore}, {avgScore}
+- {minScoreDate}, {maxScoreDate}
+- {trendLabel}
+- {todayVsAvg}
+
+Geographic calculations (requires haversine + timezone table):
+- {timezoneCount}
+- {farthestCity}
+- {distanceKm}
+- {totalDistanceKm}
+
+Prose template engines:
+- {cityBreakdown} — generates a prose sentence based on top cities hit
+- {countrySummary} — generates one of 3 conditional sentences based on userCountry + traffic pattern
+
+Simple remaining token:
+- {continuityTrend} — 3 variants based on daysObserved
+
+=== PART 1 — Score history storage ===
+
+New storage key: oys_score_history
+
+Format:
+  [
+    { "date": "2026-04-13", "score": 32, "factors": { "volume": 8, "categories": 0, "geography": 22, "continuity": 2 } },
+    { "date": "2026-04-14", "score": 35, "factors": { ... } },
+    ...
+  ]
+
+Array sorted ascending by date. One entry per day observed. Maximum 30 entries (rotation alongside oys_events_*).
+
+Entries written by: the full report page itself at load time.
+
+Logic at report load:
+1. Read oys_score_history from storage (if missing, initialize to []).
+2. Compute today's date in local timezone, format "YYYY-MM-DD".
+3. Check if history already has an entry for today.
+4. If NO entry for today:
+   - Compute today's score using computeScore with today's counters subset
+   - Append new entry { date: today, score, factors }
+   - Write back to storage
+5. If YES entry for today:
+   - Overwrite it with a fresh computation (scores can change throughout the day as counters accumulate)
+
+Per-day counter subset logic:
+For a given date, filter oys_events_YYYYMMDD events and reconstruct a per-day counters object that can be passed to computeScore. Per-day counters need: total, byCountry, byVendor, byHost, categoriesTouched (whatever computeScore actually reads). If computeScore expects daysActive, pass the number of days BEFORE and INCLUDING that date to respect the Continuity factor.
+
+Rotation:
+After writing, trim oys_score_history to max 30 entries (keep the most recent 30 by date).
+
+=== PART 2 — Retroactive seed ===
+
+First time the full report is opened after 05.3 is deployed (detected by oys_score_history being absent OR empty), do a one-time retroactive seed:
+
+1. Read all oys_events_YYYYMMDD keys from storage.
+2. For each day-key with >= MIN_EVENTS_FOR_ACTIVE_DAY events (constant already defined in report.js, value 5):
+   - Reconstruct a per-day counters object from that day's events
+   - Compute the score for that day
+   - Append to history
+3. Sort history by date ascending.
+4. Write to storage.
+5. Then continue with the normal "today snapshot" logic from Part 1.
+
+This gives the user an immediate score curve based on their actual past activity, not just a single point on day one.
+
+=== PART 3 — Score history tokens ===
+
+From oys_score_history, compute:
+
+{minScore}: minimum score in the history array
+{maxScore}: maximum score in the history array
+{avgScore}: average score (integer, rounded)
+{minScoreDate}: date of minScore, formatted "13 April" (short month, no year)
+{maxScoreDate}: date of maxScore, formatted "13 April"
+
+{trendLabel}: based on the last 3-5 days:
+- Compare average of last 2 days vs average of previous 2 days
+- "rising" if last > previous + 3
+- "falling" if last < previous - 3
+- "stable" otherwise
+- Special case: if history has fewer than 4 entries, return "insufficient data"
+
+{todayVsAvg}: based on (todayScore - avgScore):
+- If (today - avg) > 5 → "notably above your average"
+- If (today - avg) > 2 → "slightly above your average"
+- If abs(today - avg) <= 2 → "right in line with your average"
+- If (today - avg) < -2 → "slightly below your average"
+- If (today - avg) < -5 → "notably below your average"
+
+Place in the buildTokens object alongside the existing tokens.
+
+=== PART 4 — Timezone table for destination cities ===
+
+Add to /report/report.js (or to full.js if you prefer — decide based on which file uses it). Reuse where possible.
+
+Table CITY_TIMEZONES mapping each city in HOST_GEO to its IANA timezone:
+  "San Francisco": "America/Los_Angeles"
+  "Mountain View": "America/Los_Angeles"
+  "Redmond": "America/Los_Angeles"
+  "Palo Alto": "America/Los_Angeles"
+  "New York": "America/New_York"
+  "Paris": "Europe/Paris"
+  "Toronto": "America/Toronto"
+  "Hangzhou": "Asia/Shanghai"
+
+Plus any other cities that appear in HOST_GEO. Double-check by iterating HOST_GEO cities and adding a timezone for each.
+
+{timezoneCount}: count the number of DISTINCT timezones among all cities touched (derived from byHost → city → timezone).
+
+=== PART 5 — Haversine distance calculations ===
+
+Add a haversine helper function in full.js:
+
+  function haversineKm(lat1, lon1, lat2, lon2) {
+    const R = 6371; // Earth radius in km
+    const dLat = (lat2 - lat1) * Math.PI / 180;
+    const dLon = (lon2 - lon1) * Math.PI / 180;
+    const a = Math.sin(dLat/2) ** 2 + 
+              Math.cos(lat1 * Math.PI / 180) * Math.cos(lat2 * Math.PI / 180) *
+              Math.sin(dLon/2) ** 2;
+    const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1-a));
+    return R * c;
+  }
+
+Origin coordinates: from COUNTRY_COORDS based on userCountry (already computed in existing code).
+
+For each (hostname, count) in counters.byHost:
+- Look up HOST_GEO for the destination city and coords
+- Compute distance from origin to that city
+- Accumulate total: distance × count
+
+Tokens:
+{farthestCity}: city with the max distance from origin. Formatted as "City, CC" (e.g., "Hangzhou, CN").
+{distanceKm}: integer km to the farthest city, rounded to nearest 100 for readability ("roughly 9,500 kilometers" becomes "9,500"). Format with thousands separator.
+{totalDistanceKm}: sum over all hosts of (distance × requestCount). Massive number. Format with thousands separator.
+
+Edge case: if userCountry = "OTHER" (origin is mid-Atlantic), distances are computed from [-30, 35]. Works fine mathematically.
+
+=== PART 6 — {continuityTrend} token ===
+
+Simple. Based on daysObserved:
+
+- daysObserved < 7 → "to reach the maximum in " + (7 - daysObserved) + " more day" + (daysObserved === 6 ? "" : "s")
+- daysObserved === 7 → "at full continuity score"
+- daysObserved > 7 → "well into consistent exposure territory"
+
+=== PART 7 — {cityBreakdown} prose template ===
+
+Per editorial spec (page 2):
+- Top-5 cities from counters.byHost, ordered by count descending.
+- For each city, pull the anecdote from a fixed table:
+
+  CITY_ANECDOTES = {
+    "San Francisco": "where OpenAI's main infrastructure lives",
+    "New York":      "routed through Cloudflare's east coast edge network",
+    "Mountain View": "where Google's AI servers live",
+    "Redmond":       "where Microsoft hosts Copilot",
+    "Palo Alto":     "where xAI operates",
+    "Paris":         "where Mistral hosts its servers",
+    "Toronto":       "where Cohere is based",
+    "Hangzhou":      "home to DeepSeek's infrastructure",
+    "Beijing":       "routed through Chinese backbone infrastructure",
+    "Amsterdam":     "through Microsoft Azure's European region"
+  }
+
+  For any city not in the table, default to: "on servers in " + city + ", " + country
+
+Generation rules:
+- 1 city: "Most of them landed in {city}, {anecdote}."
+- 2 cities: "About {count1} of them landed in {city1}, {anecdote1}. The rest went to {city2}, {anecdote2}."
+- 3+ cities: "About {count1} of them landed in {city1}, {anecdote1}. {count2} went to {city2}, {anecdote2}. {count3} to {city3}, {anecdote3}."
+  (Only top 3 cited in prose. If there are more, the prose doesn't mention them.)
+
+Counts formatted with thousands separator if > 999, else plain integer.
+
+=== PART 8 — {countrySummary} prose template ===
+
+Per editorial spec (page 2), 3 branches:
+
+Branch 1 — user in known country, traffic does NOT touch it:
+  "Nothing stayed in " + countryName + ", where your browser was calling from."
+  (userCountry in [CH,FR,DE,GB,US,CN]; byCountry does not include userCountry; countryName uses US→"the United States", others standard name)
+
+Branch 2 — user in known country, traffic touches it:
+  - If byCountry[userCountry] / total === 1.0 (100% domestic): "It all stayed within " + countryName + ". Rare, these days."
+  - Else (partial): "Some of it stayed in " + countryName + ". Most of it did not."
+
+Branch 3 — user = "OTHER":
+  "Your data left. You know where it went. We don't know where you are."
+
+Fallback: if userCountry is null or unknown, use Branch 3 wording.
+
+=== PART 9 — Verification (logging at load) ===
+
+Extend the existing console log in full.js to include the new resolved tokens and the variants. Format:
+
+  console.group("OYS Full Report — Token trace");
+  console.log("=== Category 1 + 2 tokens ===");
+  console.table(tokensC1C2);
+  console.log("=== Category 3 (newly resolved) ===");
+  console.table({
+    minScore, maxScore, avgScore,
+    minScoreDate, maxScoreDate,
+    trendLabel, todayVsAvg,
+    timezoneCount, farthestCity, distanceKm, totalDistanceKm,
+    continuityTrend,
+    cityBreakdown: cityBreakdown.substring(0, 100) + (cityBreakdown.length > 100 ? "..." : ""),
+    countrySummary
+  });
+  console.log("=== History seed status ===");
+  console.log("Score history entries:", scoreHistory.length);
+  console.log("First entry:", scoreHistory[0]);
+  console.log("Last entry:", scoreHistory[scoreHistory.length - 1]);
+  console.groupEnd();
+
+This gives a paste-ready verification block I can review without reading the code.
+
+=== VERIFICATION ===
+
+After implementation:
+1. Open the full report in chrome-extension://
+2. Open DevTools console
+3. Paste the console.table output + the history summary
+4. Confirm no more literal {tokenName} in the PDF — all 14 deferred tokens now resolved
+5. Print to PDF, open, scan pages 2-8 looking for any remaining brace
+6. If retroactive seed ran, score history should have multiple entries (one per day with >=5 events)
+
+Expected behavior with current data (1 day installed):
+- Score history: 1 entry (today) after retroactive seed (only 1 day has enough events)
+- trendLabel: "insufficient data"
+- minScore = maxScore = todayScore
+- todayVsAvg: "right in line with your average" (since today = avg)
+- minScoreDate = maxScoreDate = today
+- timezoneCount: likely 1 (if all traffic to SF/Mountain View/Redmond, same America/Los_Angeles)
+- farthestCity + distanceKm: the SF distance from Lausanne
+- continuityTrend: "to reach the maximum in 6 more days" (if daysObserved === 1)
+
+Do NOT commit yet. After I validate the console output, we commit 05.2 + 05.3 together as ONE big commit for the full phase 05 editorial integration.
