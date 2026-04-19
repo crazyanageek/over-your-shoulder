@@ -6,12 +6,14 @@ const EVENTS_PREFIX = "oys_events_";
 const REFRESH_MS = 2000;
 const MIN_EVENTS_FOR_ACTIVE_DAY = 5;
 
-const todayEl    = document.getElementById("popup-today");
-const scoreEl    = document.getElementById("popup-score");
-const verdictEl  = document.getElementById("popup-verdict");
-const ringFillEl = document.getElementById("popup-ring-fill");
-const openBtn    = document.getElementById("open-report");
-const toggleBtn  = document.getElementById("toggle");
+const todayEl      = document.getElementById("popup-today");
+const cumulativeEl = document.getElementById("popup-cumulative");
+const scoreEl      = document.getElementById("popup-score");
+const verdictEl    = document.getElementById("popup-verdict");
+const ringFillEl   = document.getElementById("popup-ring-fill");
+const openBtn      = document.getElementById("open-report");
+const toggleBtn    = document.getElementById("toggle");
+const rootEl       = document.getElementById("popup-root");
 
 function dayKey(ts = Date.now()) {
   const d = new Date(ts);
@@ -48,7 +50,7 @@ function verdictText(score, daysActive) {
   if (!daysActive) return "No signal yet";
   if (score <= 20) return "Barely exposed";
   if (score <= 40) return "Warming up";
-  if (score <= 60) return "Moderate & climbing";
+  if (score <= 60) return "Moderate and climbing";
   if (score <= 80) return "Loud and getting louder";
   return "Shouting in all directions";
 }
@@ -62,6 +64,11 @@ async function refresh() {
   const todayCount = counters.todayDate === dayKey() ? (counters.today || 0) : 0;
   todayEl.textContent = todayCount === 0 ? "—" : todayCount.toLocaleString();
 
+  const totalCount = counters.total || 0;
+  cumulativeEl.textContent = totalCount === 0
+    ? "— since install"
+    : `${totalCount.toLocaleString()} since install`;
+
   const { score } = computeScore(counters, daysActive);
   scoreEl.textContent = String(score);
   verdictEl.textContent = verdictText(score, daysActive);
@@ -71,6 +78,7 @@ async function refresh() {
   ringFillEl.setAttribute("stroke", ringColor(score));
 
   toggleBtn.textContent = isActive ? "Pause" : "Resume";
+  rootEl.classList.toggle("paused", !isActive);
 }
 
 openBtn.addEventListener("click", () => {

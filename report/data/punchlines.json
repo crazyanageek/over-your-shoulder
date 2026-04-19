@@ -79,7 +79,7 @@
       "moderate": {
         "$range": "41-60",
         "lines": [
-          "Moderate & climbing",
+          "Moderate and climbing",
           "Louder than you think",
           "Halfway to loud",
           "Talkative"

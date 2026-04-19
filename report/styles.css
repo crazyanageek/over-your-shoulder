@@ -36,12 +36,22 @@ body {
   font-feature-settings: "ss01", "cv11";
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
-  padding: 2rem 1rem;
+  padding: 1rem;
   animation: fadeIn 420ms var(--ease) both;
   min-height: 100vh;
   display: flex;
   align-items: center;
   justify-content: center;
+  overflow: hidden;
+}
+
+/* Stage wraps the badge and holds its SCALED footprint, so flex-centering
+   works without the badge bleeding past the viewport. Actual width/height
+   are written by JS (fitBadge) to match the current scale factor. */
+.badge-stage {
+  position: relative;
+  width: 600px;
+  height: 750px;
 }
 @keyframes fadeIn {
   from { opacity: 0; transform: translateY(4px); }
@@ -50,15 +60,42 @@ body {
 ::selection { background: var(--ink); color: var(--bg); }
 
 .badge {
-  width: 100%;
-  max-width: 600px;
-  aspect-ratio: 4 / 5;
+  width: 600px;
+  height: 750px;
   background: var(--bg);
   box-shadow: 0 1px 2px rgba(0,0,0,0.04), 0 20px 60px rgba(0,0,0,0.12);
   display: grid;
-  grid-template-rows: auto 1fr auto auto auto auto;
+  grid-template-rows: auto auto 1fr auto auto auto auto;
   overflow: hidden;
-  position: relative;
+  position: absolute;
+  top: 0;
+  left: 0;
+  transform-origin: top left;
+  /* transform: scale(N) applied by JS on resize */
+}
+
+/* ================= BANNER ================= */
+.banner {
+  background: var(--bg);
+  color: var(--ink);
+  font-family: var(--font-display);
+  font-variation-settings: "opsz" 48;
+  font-style: italic;
+  line-height: 1.35;
+  border-bottom: 1px solid var(--ink);
+}
+.banner[hidden] { display: none; }
+.banner.paused {
+  border-left: 3px solid var(--alarm);
+  padding: 0.75rem 1rem 0.75rem calc(1rem - 3px);
+  font-size: 0.95rem;
+  color: var(--ink);
+}
+.banner.warning {
+  border-left: 3px solid var(--make-cont);
+  padding: 0.65rem 1rem 0.65rem calc(1rem - 3px);
+  font-size: 0.9rem;
+  color: var(--ink-muted);
 }
 
 /* ================= MASTHEAD ================= */
@@ -106,14 +143,14 @@ body {
 .hero-top {
   display: grid;
   grid-template-columns: 1fr auto;
-  column-gap: 0.75rem;
+  column-gap: 1rem;
   align-items: start;
 }
 .hero-title {
   font-family: var(--font-display);
   font-variation-settings: "opsz" 144;
   font-weight: 400;
-  font-size: clamp(1.8rem, 5.5vw, 2.5rem);
+  font-size: 2.3rem;
   line-height: 0.95;
   letter-spacing: -0.035em;
   color: var(--ink-muted);
@@ -131,11 +168,12 @@ body {
   overflow: hidden;
   max-width: 320px;
   min-width: 0;
+  padding-right: 0.5rem;
 }
 .hero-number {
   font-family: var(--font-display);
   font-variation-settings: "opsz" 144;
-  font-size: clamp(4.5rem, 15vw, 8rem);
+  font-size: 7.5rem;
   font-weight: 500;
   line-height: 0.82;
   letter-spacing: -0.05em;
@@ -466,17 +504,57 @@ body {
   flex-shrink: 0;
   display: inline-block;
 }
-.foot .cta {
+.foot {
+  flex-wrap: wrap;
+  row-gap: 0.5rem;
+}
+.share-group {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  flex-wrap: wrap;
+}
+.share-btn {
   font-family: var(--font-display);
+  font-variation-settings: "opsz" 48;
   font-style: italic;
   font-size: 0.9rem;
   letter-spacing: 0;
   text-transform: none;
-  white-space: nowrap;
-}
-.foot .cta a {
-  color: var(--ink);
   text-decoration: none;
-  border-bottom: 1px solid var(--ink);
-  padding-bottom: 1px;
+  white-space: nowrap;
+  cursor: pointer;
+  margin: 0;
 }
+button.share-btn {
+  border: none;
+  border-radius: 2px;
+  padding: 0;
+}
+.share-btn.primary {
+  background: var(--ink);
+  color: var(--bg);
+  padding: 0.4rem 0.8rem;
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+  font-weight: 500;
+  font-size: 0.82rem;
+  font-style: italic;
+}
+.share-btn.primary:hover { background: #1f1f1e; }
+.share-icon {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 32px;
+  height: 32px;
+  color: var(--ink);
+  background: transparent;
+  border: none;
+  text-decoration: none;
+  cursor: pointer;
+  padding: 0;
+  margin: 0;
+}
+.share-icon:hover { background: var(--rule-soft); }
+.share-icon svg { display: block; }

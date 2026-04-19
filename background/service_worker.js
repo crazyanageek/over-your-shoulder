@@ -40,10 +40,21 @@ async function init() {
     active = stored[STORAGE_KEY_ACTIVE] !== false;
 
     await backfillIfNeeded();
+    updateBadge(active);
   } catch (err) {
     console.error("OYS init failed", err);
   } finally {
     ready = true;
+  }
+}
+
+function updateBadge(isActive) {
+  if (!chrome.action) return;
+  if (isActive) {
+    chrome.action.setBadgeText({ text: "" });
+  } else {
+    chrome.action.setBadgeText({ text: "\u2016" });
+    chrome.action.setBadgeBackgroundColor({ color: "#B91C1C" });
   }
 }
 
@@ -172,6 +183,7 @@ chrome.storage.onChanged.addListener((changes, area) => {
   if (active !== next) {
     active = next;
     console.log(`OYS ${next ? "resumed" : "paused"}`);
+    updateBadge(next);
   }
 });
 

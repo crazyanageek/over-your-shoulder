@@ -54,7 +54,7 @@ const FALLBACK_PUNCHLINES = {
   verdict: {
     low:       { lines: ["Barely exposed"] },
     mild:      { lines: ["Warming up"] },
-    moderate:  { lines: ["Moderate & climbing"] },
+    moderate:  { lines: ["Moderate and climbing"] },
     high:      { lines: ["Loud and getting louder"] },
     alarming:  { lines: ["Shouting in all directions"] },
   },
@@ -122,14 +122,28 @@ function tierColorHex(tier) {
   return tier === 3 ? "#B91C1C" : tier === 2 ? "#E28413" : "#CC9500";
 }
 
-function computeDateline(daysActive) {
-  const d = new Date();
-  const weekday = d.toLocaleDateString("en-US", { weekday: "short" });
-  const day = d.getDate();
-  const month = d.toLocaleDateString("en-US", { month: "short" });
-  const dateStr = `${weekday} ${day} ${month}`;
-  const daysStr = daysActive === 1 ? "1 day of data" : `${daysActive} days of data`;
+function computeDateline(daysActive, installDateKey) {
+  let dateStr;
+  if (installDateKey && /^\d{8}$/.test(installDateKey)) {
+    const y = parseInt(installDateKey.slice(0, 4), 10);
+    const m = parseInt(installDateKey.slice(4, 6), 10);
+    const d = parseInt(installDateKey.slice(6, 8), 10);
+    const date = new Date(y, m - 1, d);
+    const month = date.toLocaleDateString("en-US", { month: "short" });
+    dateStr = `Since ${d} ${month}`;
+  } else {
+    dateStr = "Since today";
+  }
+  const daysStr = daysActive === 1 ? "1 day observed" : `${daysActive} days observed`;
   return { dateStr, daysStr };
+}
+
+function earliestEventKey(all) {
+  const keys = Object.keys(all)
+    .filter((k) => k.startsWith(EVENTS_PREFIX) && /^\d{8}$/.test(k.slice(EVENTS_PREFIX.length)));
+  if (keys.length === 0) return null;
+  keys.sort();
+  return keys[0].slice(EVENTS_PREFIX.length);
 }
 
 async function loadPunchlines() {
@@ -168,7 +182,7 @@ function renderHeroSub(line, total) {
   el.replaceChildren();
   const caption = document.createElement("span");
   caption.className = "caption-label";
-  caption.textContent = "Requests your browser sent to AI servers today";
+  caption.textContent = "Requests your browser has sent to AI servers";
   el.appendChild(caption);
   const text = total === 0 ? "No data yet. Come back tomorrow." : line;
   el.appendChild(document.createTextNode(text));
@@ -386,7 +400,24 @@ function renderStats(counters, totalRequests) {
 
   const vendorCount = Object.keys(counters.byVendor || {}).length;
   stats[2].querySelector(".value").textContent = String(vendorCount);
-  stats[2].querySelector(".label").textContent = vendorCount === 1 ? "AI vendor" : "AI vendors";
+  stats[2].querySelector(".label").textContent =
+    vendorCount === 1 ? "AI vendor contacted" : "AI vendors contacted";
+}
+
+const BADGE_W = 600;
+const BADGE_H = 750;
+const STAGE_MARGIN = 32;
+
+function fitBadge() {
+  const badge = document.querySelector(".badge");
+  const stage = document.querySelector(".badge-stage");
+  if (!badge || !stage) return;
+  const scaleW = (window.innerWidth - STAGE_MARGIN) / BADGE_W;
+  const scaleH = (window.innerHeight - STAGE_MARGIN) / BADGE_H;
+  const scale = Math.max(0.1, Math.min(1, scaleW, scaleH));
+  badge.style.transform = `scale(${scale})`;
+  stage.style.width = BADGE_W * scale + "px";
+  stage.style.height = BADGE_H * scale + "px";
 }
 
 function fitHeroNumber() {
@@ -414,6 +445,7 @@ function fitHeroNumber() {
 
 async function initReport() {
   const all = await chrome.storage.local.get(null);
+  const isActive = all.oys_active !== false;
   const counters = all.oys_counters || defaultCounters();
   const daysActive = countDaysActive(all);
   const { score, breakdown } = computeScore(counters, daysActive);
@@ -445,7 +477,9 @@ async function initReport() {
       .replace("{C}", String(countryCount));
   }
 
-  renderMasthead(masthead, computeDateline(daysActive));
+  renderBanner(isActive, totalRequests, daysActive);
+  const installDateKey = earliestEventKey(all);
+  renderMasthead(masthead, computeDateline(daysActive, installDateKey));
   renderHero(totalRequests);
   renderHeroSub(heroSub, totalRequests);
   renderScore(score, breakdown, verdict);
@@ -453,7 +487,205 @@ async function initReport() {
   await renderMap(counters);
   renderDestinations(counters);
   renderStats(counters, totalRequests);
+  wireShareButtons(masthead);
   fitHeroNumber();
+  fitBadge();
+  window.addEventListener("resize", fitBadge);
+}
+
+function renderBanner(isActive, totalRequests, daysActive) {
+  const el = document.getElementById("banner");
+  if (!el) return;
+  el.className = "banner";
+  el.textContent = "";
+  el.hidden = true;
+  if (totalRequests === 0) {
+    el.classList.add("warning");
+    el.textContent = "No data yet. Open some AI sites and come back.";
+    el.hidden = false;
+  } else if (daysActive < 1) {
+    el.classList.add("warning");
+    el.textContent = "Less than a day of data. The report will get richer as you keep the extension on.";
+    el.hidden = false;
+  } else if (!isActive) {
+    el.classList.add("paused");
+    el.textContent = "Monitoring is currently paused. Resume from the extension icon.";
+    el.hidden = false;
+  }
+}
+
+// Landing page at overyourshoulder.ch is coming in phase 06.
+// Share links already point there so existing shares benefit when the page goes live.
+const SHARE_TARGET_URL = "https://overyourshoulder.ch";
+
+function wireShareButtons(mastheadPunchline) {
+  const downloadBtn = document.getElementById("download-btn");
+  const liLink = document.getElementById("share-linkedin");
+  const xLink = document.getElementById("share-x");
+
+  if (liLink) {
+    liLink.href = `https://www.linkedin.com/sharing/share-offsite/?url=${encodeURIComponent(SHARE_TARGET_URL)}`;
+  }
+  if (xLink) {
+    const text = encodeURIComponent(mastheadPunchline);
+    const url = encodeURIComponent(SHARE_TARGET_URL);
+    xLink.href = `https://twitter.com/intent/tweet?text=${text}&url=${url}`;
+    console.log("X share URL:", xLink.href);
+  }
+  if (downloadBtn && !downloadBtn.dataset.wired) {
+    downloadBtn.dataset.wired = "1";
+    downloadBtn.addEventListener("click", () => {
+      downloadCard().catch((err) => {
+        console.error("OYS download failed", err);
+        alert('Export failed. Right-click the card and use "Save image as…" as a fallback.');
+      });
+    });
+  }
+}
+
+/*
+ * Download pipeline: serialize the .badge element into an SVG foreignObject,
+ * rasterize via <img> + canvas, trigger download as PNG.
+ *
+ * Fonts are bundled locally (/report/fonts/) and inlined as base64 data: URLs
+ * into the exported SVG's <style> block. This avoids the tainted-canvas error
+ * that occurs when SVGs reference cross-origin (Google Fonts) resources, and
+ * lets the PNG render in the real typefaces instead of system fallbacks.
+ */
+async function downloadCard() {
+  const badge = document.querySelector(".badge");
+  if (!badge) return;
+  const btn = document.getElementById("download-btn");
+  if (btn) btn.disabled = true;
+
+  try {
+    const [stylesCss, fontsCssInlined] = await Promise.all([
+      fetch("styles.css").then((r) => r.text()),
+      loadFontsCssWithBase64(),
+    ]);
+
+    const tokensOverride = `
+      .badge {
+        --bg: #FAFAF7;
+        --ink: #0E0E0D;
+        --ink-muted: #6B6B6A;
+        --ink-soft: #A8A8A3;
+        --rule: #D9D6CC;
+        --rule-soft: #ECEAE2;
+        --coast: #6B6B6A;
+        --alarm: #B91C1C;
+        --warn: #E28413;
+        --heat-1: #CC9500;
+        --heat-2: #E28413;
+        --heat-3: #B91C1C;
+        --make-volume: #2B2B2A;
+        --make-cat: #BFA57A;
+        --make-geo: #B91C1C;
+        --make-cont: #3E5C66;
+      }
+      * { animation: none !important; transition: none !important; }
+    `;
+
+    // The badge is CSS-sized at 600x750 and may be visually scaled down on
+    // narrow viewports via transform: scale(). Use offsetWidth/Height (which
+    // return layout dimensions, unaffected by transform) so the export always
+    // rasterizes at the intrinsic size regardless of current viewport scale.
+    const width = badge.offsetWidth || BADGE_W;
+    const height = badge.offsetHeight || BADGE_H;
+    const scale = 2;
+
+    const clone = badge.cloneNode(true);
+    // The live badge is position:absolute + transform:scale(N) for the on-screen
+    // stage layout. Reset both on the clone so it rasterizes at its intrinsic
+    // 600x750 without shrinking into a corner of the exported canvas.
+    clone.style.transform = "none";
+    clone.style.position = "static";
+    const shareGroup = clone.querySelector(".share-group");
+    if (shareGroup) shareGroup.remove();
+
+    const serializer = new XMLSerializer();
+    const badgeHtml = serializer.serializeToString(clone);
+
+    const svg =
+      `<svg xmlns="http://www.w3.org/2000/svg" width="${width}" height="${height}">` +
+      `<foreignObject width="100%" height="100%">` +
+      `<div xmlns="http://www.w3.org/1999/xhtml">` +
+      `<style>${fontsCssInlined}${stylesCss}${tokensOverride}</style>` +
+      badgeHtml +
+      `</div></foreignObject></svg>`;
+
+    console.log("Serialized SVG length:", svg.length);
+    console.log("First 500 chars:", svg.substring(0, 500));
+    console.log("Contains fonts.googleapis:", svg.includes("fonts.googleapis"));
+    console.log("Contains fonts.gstatic:", svg.includes("fonts.gstatic"));
+    console.log("Contains http:", svg.match(/https?:\/\/[^\s"']+/g));
+
+    // Use data: URL instead of blob: URL. In MV3 extensions, blob: URLs
+    // loaded via <img> can be treated as cross-origin by canvas tainting
+    // rules even when they come from the extension's own origin. A data:
+    // URL is always treated as same-origin-equivalent for tainting.
+    const svgB64 = btoa(unescape(encodeURIComponent(svg)));
+    const svgUrl = "data:image/svg+xml;base64," + svgB64;
+
+    const img = new Image();
+    await new Promise((resolve, reject) => {
+      img.onload = resolve;
+      img.onerror = () => reject(new Error("SVG failed to load"));
+      img.src = svgUrl;
+    });
+
+    const canvas = document.createElement("canvas");
+    canvas.width = width * scale;
+    canvas.height = height * scale;
+    const ctx = canvas.getContext("2d");
+    ctx.fillStyle = "#FAFAF7";
+    ctx.fillRect(0, 0, canvas.width, canvas.height);
+    ctx.scale(scale, scale);
+    ctx.drawImage(img, 0, 0, width, height);
+
+    const blob = await new Promise((resolve) => canvas.toBlob(resolve, "image/png"));
+    if (!blob) throw new Error("toBlob returned null");
+
+    const d = new Date();
+    const y = d.getFullYear();
+    const m = String(d.getMonth() + 1).padStart(2, "0");
+    const day = String(d.getDate()).padStart(2, "0");
+    const filename = `over-your-shoulder-${y}-${m}-${day}.png`;
+
+    const dlUrl = URL.createObjectURL(blob);
+    const a = document.createElement("a");
+    a.href = dlUrl;
+    a.download = filename;
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    URL.revokeObjectURL(dlUrl);
+  } finally {
+    if (btn) btn.disabled = false;
+  }
+}
+
+let cachedFontsCssInlined = null;
+async function loadFontsCssWithBase64() {
+  if (cachedFontsCssInlined) return cachedFontsCssInlined;
+  const cssText = await (await fetch("fonts.css")).text();
+  const urlRe = /url\(['"]?(fonts\/[^'")]+\.woff2)['"]?\)/g;
+  const paths = [...new Set([...cssText.matchAll(urlRe)].map((m) => m[1]))];
+  const entries = await Promise.all(
+    paths.map(async (p) => {
+      const buf = await (await fetch(p)).arrayBuffer();
+      const bytes = new Uint8Array(buf);
+      let binary = "";
+      const chunk = 0x8000;
+      for (let i = 0; i < bytes.length; i += chunk) {
+        binary += String.fromCharCode.apply(null, bytes.subarray(i, i + chunk));
+      }
+      return [p, "data:font/woff2;base64," + btoa(binary)];
+    })
+  );
+  const dataUrls = Object.fromEntries(entries);
+  cachedFontsCssInlined = cssText.replace(urlRe, (_, p) => `url('${dataUrls[p]}')`);
+  return cachedFontsCssInlined;
 }
 
 initReport().catch((err) => console.error("OYS report init failed", err));

@@ -3,16 +3,13 @@
   <head>
     <meta charset="UTF-8" />
     <title>Over Your Shoulder</title>
-    <link rel="preconnect" href="https://fonts.googleapis.com" />
-    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
-    <link
-      href="https://fonts.googleapis.com/css2?family=Fraunces:ital,opsz,wght@0,9..144,400;0,9..144,500;0,9..144,600;1,9..144,400;1,9..144,500&family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap"
-      rel="stylesheet"
-    />
+    <link rel="stylesheet" href="../report/fonts.css" />
     <link rel="stylesheet" href="popup.css" />
   </head>
   <body>
-    <main class="popup">
+    <main class="popup" id="popup-root">
+      <div class="pause-bar" aria-hidden="true"></div>
+      <p class="pause-notice" id="pause-notice">Paused · no data is being recorded</p>
       <header class="pop-mast">
         <p class="pop-title">
           <span class="mast-muted">Who is</span>
@@ -22,7 +19,8 @@
 
       <section class="pop-hero">
         <p class="pop-num" id="popup-today">0</p>
-        <p class="pop-label">today</p>
+        <p class="pop-label">Requests today</p>
+        <p class="pop-cumulative" id="popup-cumulative">— since install</p>
       </section>
 
       <section class="pop-score">
