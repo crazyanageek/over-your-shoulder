@@ -1,0 +1,113 @@
+Phase 05.3.1 — Fix page overflow on pages 4 through 8 of the PDF report.
+
+5 of 7 content pages overflow. This is systemic — not a spacing issue to tighten away, but a structural mismatch between the editorial content density and the single-A4-page constraint.
+
+DECISION: abandon the "one conceptual page = one physical page" constraint. Allow content to flow naturally across multiple physical pages. Each conceptual section keeps its identity via its H1 and page number, but its content can span 2 physical pages if needed.
+
+=== STEP 1 — STRUCTURAL CSS CHANGE ===
+
+Current CSS on .page likely has:
+  .page { height: 297mm; page-break-after: always; }
+
+Change to:
+  .page {
+    min-height: 297mm;
+    page-break-after: always;
+    page-break-inside: auto;
+    display: flex;
+    flex-direction: column;
+  }
+
+Verify the A4 sizing via @page rule is still correct. The A4 size should be declared once at the top of the print CSS:
+  @page {
+    size: A4 portrait;
+    margin: 0;
+  }
+
+With min-height (not height), content longer than 297mm will push the next page break to after the content ends, not clip at 297mm.
+
+=== STEP 2 — PAGE NUMBERS ON LAST PHYSICAL PAGE ===
+
+Page numbers are currently in a fixed position at bottom-right of each .page. With multi-physical-page conceptual pages, the page number should appear on the LAST physical page of each section, not on both.
+
+Implementation: use `position: absolute; bottom: 14mm; right: 16mm` relative to the .page container. When the .page spans 2 physical pages due to content overflow, the absolutely-positioned child naturally falls at the bottom of the LAST physical page of that section (because its parent's bottom is at its very end).
+
+This should work with the min-height approach without additional changes. Verify by printing to PDF.
+
+Label format stays "04 / 08" etc. — these refer to CONCEPTUAL page numbers, which is correct (the reader is on the 4th section of 8). The fact that there are actually 10-12 physical pages in the final PDF doesn't matter.
+
+=== STEP 3 — PAGE 8 FOOTER FIX ===
+
+Page 8 has a special footer ("© My Insights · Switzerland") that's currently position: absolute and gets overlapped by content above.
+
+Change page 8 structure to:
+
+  .page-8 {
+    display: flex;
+    flex-direction: column;
+    min-height: 297mm;
+  }
+  .page-8 .page-content {
+    flex: 1 1 auto;
+  }
+  .page-8 .page-footer {
+    margin-top: auto;  /* pushes footer to bottom */
+    position: static;   /* remove absolute positioning */
+    padding-top: 10mm;  /* breathing room above footer */
+  }
+
+With margin-top: auto, the footer always sits at the bottom of the available space on the last physical page, regardless of how much content is above it. If content is short, the footer sits at the bottom of the single physical page. If content is long and spans 2 physical pages, the footer sits at the bottom of the second physical page.
+
+Make sure the page-number (08 / 08) is still visible and not fighting with the footer. If they overlap, adjust the page-number's bottom position to sit ABOVE the footer, or change the footer to not have a bottom margin that conflicts.
+
+=== STEP 4 — SECTION-LEVEL PAGE BREAK HINTS ===
+
+For pages 4 and 6 which have multiple distinct sections (Volume/Categories/Geography/Continuity on page 4, and 5 rule-blocks on page 6), add CSS hints to prevent breaking in awkward places:
+
+  .score-section,
+  .rule-block {
+    page-break-inside: avoid;  /* don't break mid-section if avoidable */
+  }
+
+But ALLOW the page to break BETWEEN sections:
+  
+  .score-section + .score-section,
+  .rule-block + .rule-block {
+    /* sections can naturally break at these boundaries */
+  }
+
+If page-break-inside: avoid causes a section to be orphaned (entire section pushed to next page with nothing on the previous page), use `orphans: 3; widows: 3;` on paragraphs to control text breaks at a finer level.
+
+=== STEP 5 — NO TIGHTENING, PRESERVE LEGIBILITY ===
+
+Do NOT reduce paragraph line-height, margins, or font-sizes as a "solution" to overflow. The goal is correct content rendering across physical pages, not squeezing content into a fixed physical page count. Legibility stays as-is.
+
+=== VERIFICATION ===
+
+After fixes:
+1. Open /report/full.html in the extension context
+2. Scroll through all 8 conceptual pages on-screen — every paragraph visible, nothing cut off
+3. Print to PDF with Chrome's Default margins
+4. Count total physical pages — likely 10-12
+5. Verify:
+   - Page 1 (cover): 1 physical page
+   - Page 2 (Overlooked): 1 physical page (likely fits)
+   - Page 3 (Numbers): 1 physical page (has charts placeholder, probably fits)
+   - Page 4 (Score): possibly 2 physical pages
+   - Page 5 (Methodology): possibly 2 physical pages
+   - Page 6 (Rules): probably 2 physical pages (5 blocks)
+   - Page 7 (Glossary): probably 1-2 physical pages
+   - Page 8 (Now what): 1 physical page with proper footer at bottom
+6. Open the PDF and verify:
+   - No content is cut off anywhere
+   - Page 8 footer ("© My Insights · Switzerland") is visible at the bottom
+   - Every conceptual section has its H1 at the top
+   - Page numbers (02/08, 03/08, etc.) appear once per conceptual page, on the last physical page of each section
+
+Tell me:
+- Total physical page count in the PDF
+- Which conceptual pages used 2 physical pages
+- Whether page 8 footer renders correctly
+- Any visible regression on the 3 pages that previously fit (pages 1, 2, 3)
+
+Do NOT commit yet. After visual validation of the PDF, we'll commit.

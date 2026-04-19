@@ -39,16 +39,26 @@ body {
 /* =========================================================
    Page shell
    ========================================================= */
+/*
+ * `min-height` + flex-column (instead of fixed `height` + `overflow: hidden`)
+ * lets a conceptual page grow to accommodate dense editorial content and
+ * flow onto a second physical page when needed. Without this, real 05.2
+ * content was silently clipped at the 297mm line. Page-break-after still
+ * forces each topic (2..8) to start on a fresh physical page.
+ */
 .page {
   width: 210mm;
-  height: 297mm;
+  min-height: 297mm;
   background: var(--bg);
   box-shadow: 0 2px 6px rgba(0, 0, 0, 0.08), 0 12px 40px rgba(0, 0, 0, 0.12);
   padding: 18mm 16mm;
   position: relative;
-  overflow: hidden;
+  display: flex;
+  flex-direction: column;
   page-break-after: always;
   break-after: page;
+  page-break-inside: auto;
+  break-inside: auto;
 }
 .page:last-child {
   page-break-after: auto;
@@ -572,11 +582,15 @@ p {
   color: var(--ink);
   margin-right: 0.25em;
 }
+/*
+ * Page-8 footer sits at the bottom of its conceptual page via flex
+ * `margin-top: auto` (was position: absolute + bottom: 20mm, which let
+ * overflowing content stack over it). `padding-bottom: 5mm` leaves a 5mm
+ * clearance above the absolutely-positioned page-number marker.
+ */
 .page-footer {
-  position: absolute;
-  left: 16mm;
-  right: 16mm;
-  bottom: 20mm; /* 6mm clearance above the page-number marker */
+  margin-top: auto;
+  padding-bottom: 5mm;
   font-family: "Inter", sans-serif;
   font-size: 9pt;
   color: var(--ink-soft);
