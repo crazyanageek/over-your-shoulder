@@ -387,8 +387,7 @@ body {
 .map-band {
   padding: 0.9rem 1rem 0.8rem;
   border-bottom: 1px solid var(--ink);
-  min-height: 0;
-  overflow: hidden;
+  min-height: 210px;
 }
 .map-band .map-headline {
   font-family: var(--font-display);
@@ -401,7 +400,7 @@ body {
   line-height: 1.2;
 }
 .map-band .map-headline em { font-style: italic; color: var(--alarm); }
-#worldmap { width: 100%; height: auto; display: block; max-height: 175px; }
+#worldmap { width: 100%; height: auto; display: block; max-height: 135px; }
 
 #worldmap .sphere { fill: #F5F3EB; stroke: none; }
 #worldmap .graticule {
@@ -447,18 +446,26 @@ body {
 
 .destinations-list {
   display: flex;
-  flex-wrap: wrap;
+  flex-wrap: nowrap;
+  width: 100%;
+  overflow-x: hidden;
   gap: 0.45rem 1.4rem;
   margin-top: 0.55rem;
   font-family: var(--font-mono);
   font-size: 10.5px;
   color: var(--ink);
   letter-spacing: 0.04em;
+  /* Graceful degradation: if a future user hits 7+ countries, fade the
+     right edge rather than clip hard. 3-country fake data (~440px) sits
+     well inside the 568px band, so the mask is invisible in practice. */
+  mask-image: linear-gradient(to right, black 85%, transparent 100%);
+  -webkit-mask-image: linear-gradient(to right, black 85%, transparent 100%);
 }
 .destinations-list .dest-item {
   display: inline-flex;
   align-items: center;
   gap: 0.4rem;
+  flex-shrink: 0;
 }
 .destinations-list .swatch {
   width: 8px; height: 8px;
@@ -523,10 +530,10 @@ body {
    downloadCard() via `.share-group` selector. */
 
 .foot {
-  padding: 0.75rem 1rem;
+  padding: 0.5rem 1rem;
   display: flex;
   flex-direction: column;
-  row-gap: 0.5rem;
+  row-gap: 0.35rem;
   font-family: var(--font-mono);
   font-size: 10.5px;
   color: var(--ink-muted);
@@ -608,7 +615,7 @@ body {
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  padding: 0.45rem 0.8rem;
+  padding: 0.35rem 0.8rem;
   font-size: 0.82rem;
   font-weight: 500;
   font-style: italic;
