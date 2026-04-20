@@ -1,19 +1,74 @@
 # Over Your Shoulder
 
-## What it is
+A free Chrome extension that shows you where your AI data goes.
 
-A Chrome extension that shows where your AI queries actually go. It surfaces which AI provider endpoints your browser is talking to, so you can see your own usage at a glance.
+## What it does
 
-## Privacy model
+Over Your Shoulder observes your browser's outbound traffic to known AI services (ChatGPT, Claude, Gemini, Mistral, DeepSeek, Perplexity, and others). It produces two things:
 
-**Metadata only. We never read request bodies. We never read headers. We never read responses. No data leaves your browser, ever.**
+- **A shareable badge** — a single image summarizing your exposure score, countries touched, and vendors contacted. Downloadable as PNG.
+- **A full PDF report** — eight pages breaking down your score across four factors (volume, categories, geography, continuity), with a map, vendor breakdown, hourly rhythm, and the legal context for every destination.
 
-## How to load in dev mode
+All analysis happens locally in your browser. Nothing leaves your device.
 
-1. Open `chrome://extensions` in Chrome.
-2. Enable **Developer mode** (top-right toggle).
-3. Click **Load unpacked** and select this repository's root folder.
+## Privacy
+
+OYS uses Chrome's webRequest API in observation mode only. It records five fields of metadata per request:
+
+- Timestamp
+- Destination hostname
+- Destination path (truncated to 50 characters)
+- Tab identifier
+- Source site
+
+It does NOT record:
+
+- Request bodies
+- Response bodies
+- Authorization headers
+- Cookies
+- Full URLs with query parameters
+- IP addresses
+
+All data stays in `chrome.storage.local`. The extension never connects to any external server. Data is rotated after 30 days.
+
+See [overyourshoulder.ch/privacy](https://overyourshoulder.ch/privacy) for the full privacy policy.
+
+## Installation
+
+Install from the Chrome Web Store: [link coming soon]
+
+Or load unpacked for development:
+
+1. Clone this repo
+2. Open `chrome://extensions`
+3. Enable "Developer mode"
+4. Click "Load unpacked" and select this directory
+
+## Project structure
+
+```
+/manifest.json       MV3 manifest
+/background.js       Service worker, webRequest listener
+/popup/              Extension popup UI
+/report/             Badge (LinkedIn-shareable) + full PDF report
+/lib/                Scoring, country detection, shared helpers
+/data/               Endpoints table, punchlines, source categories
+/icons/              Extension icons
+```
+
+## Development
+
+Requires Chrome or Edge (MV3-compatible browser).
+
+No build step — the extension loads directly from source.
 
 ## License
 
-TBD — repository is private during development.
+MIT. See [LICENSE](./LICENSE).
+
+## Credits
+
+Over Your Shoulder is a project by [My Insights](https://my-insights.ch), based in Switzerland.
+
+Contact: contact@overyourshoulder.ch
