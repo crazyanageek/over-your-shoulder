@@ -13,3 +13,6 @@ logo and icones.zip
 
 # Personal scratch notes
 installFromGitHub.txt
+
+# Local debugging tool, not for distribution
+report/fixtures/
