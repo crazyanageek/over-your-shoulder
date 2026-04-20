@@ -1,0 +1,23 @@
+Backfill validated. Proceed with applying it to all 27 entries, then move to the 22 new AI services + 25 monitoring/analytics additions.
+
+Confirmations:
+1. Keep HuggingFace at New York — it matches the Cloudflare edge anecdote and the corporate HQ, no change needed
+2. Cohere in Toronto stays as-is, just means we'll have more geographic diversity once all ~80 endpoints are in place (worth testing the badge's destinations-list with 5-7 countries observed in real usage)
+
+One anomaly to investigate before applying backfill:
+- Entry #18 is "http://www.perplexity.ai" — this looks like a full URL rather than a hostname, inconsistent with every other entry. Please check:
+  (a) Is this domain actually matched anywhere in service_worker.js or the endpoint resolution logic?
+  (b) If yes, is the "http://" prefix handled specially?
+  (c) If it's historical noise with no practical effect, remove it entirely
+  
+Report back with what you find for #18 before applying backfill. Don't touch anything else yet.
+
+After that decision, proceed:
+1. Apply backfill to the 27 entries (now 26 if #18 is removed, or 27 if kept with normalized format)
+2. Add the 22 new AI services
+3. Add the 25 monitoring/analytics/feature-flags services
+4. Update manifest.json host_permissions to match
+5. Update service_worker.js to store the type field in captured events
+6. Skip Step 7 (lib/score.js) — already confirmed not needed due to bySourceCategory architecture
+7. Update HOST_GEO tables in report.js and full.js for the 22 new AI services only (NOT for monitoring)
+8. Verify manually with real data + fake data

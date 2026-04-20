@@ -1,0 +1,100 @@
+Phase 04.7.4 — Rebalance badge row heights after 04.7.3 map fix
+
+=== BUG ===
+
+Fix 04.7.3 added min-height: 230px to .map-band to prevent destinations-list from clipping. This worked, but created a regression: the hero row (.hero) is now compressed, cutting off the italic sub-headline "In X minutes on AI sites, your browser sent Y requests. That's one every Z."
+
+The badge is fixed at 600×750 with overflow: hidden on .badge, so when one row grows, another must shrink. .map-band grew ~30px, and the 1fr hero row absorbed all of that compression.
+
+=== GOAL ===
+
+Keep the map-band fix working (destinations-list visible) AND keep the hero fully readable. Total badge height must remain exactly 750px.
+
+=== INVESTIGATION FIRST ===
+
+Before editing anything, run these console commands on a page where the badge is rendered WITH fake data (3 countries visible):
+
+  [...document.querySelectorAll('.badge > *')].forEach(el => {
+    console.log(el.className, '→', el.getBoundingClientRect().height.toFixed(1) + 'px');
+  });
+
+This will show the actual height of each grid row of the badge. Paste the output in your report.
+
+Expected rows in .badge grid (grid-template-rows: auto auto 1fr auto auto auto auto):
+  1. .banner (auto) — 0px when hidden, visible otherwise
+  2. .masthead (auto) — ~40px
+  3. .hero (1fr) — whatever remains
+  4. .score-band (auto) — ~120px
+  5. .map-band (auto now with min-height 230) — ~230px
+  6. .stats-row (auto) — ~90px
+  7. .foot (auto) — ~50px
+
+Total of fixed rows: 40 + 120 + 230 + 90 + 50 = 530px
+Available for 1fr hero: 750 - 530 = 220px
+
+Before the fix, hero was getting 250px (230 min-height for map-band was 200 implicit). Now hero gets only 220px — not enough for the title + number + sub-headline.
+
+=== FIX STRATEGY ===
+
+Don't grow .map-band beyond necessary. Reduce its min-height to accommodate destinations-list more precisely.
+
+Measured from actual rendering:
+- Map SVG at max-height 145px = 145px
+- .map-headline: ~35px including margin
+- destinations-list: ~20px single line, ~40px if wrapping to 2 lines
+- padding .map-band: 0.9rem top + 0.8rem bottom = ~27px
+- border-bottom: 1px
+
+Worst case (2-line wrapping list): 145 + 35 + 40 + 27 + 1 = 248px. That's too much.
+
+Single-line list (3 countries fits easily in 568px width): 145 + 35 + 20 + 27 + 1 = 228px.
+
+Revised approach: set min-height: 215px on .map-band (down from 230), and reduce the map SVG's max-height slightly more to give even more breathing room:
+
+  #worldmap {
+    max-height: 145px → 135px
+  }
+  .map-band {
+    min-height: 230px → 210px
+  }
+
+This gives back 20px to the hero row. New hero height: 240px. Should fit the 3-line title + big number + italic sub-headline.
+
+=== SAFEGUARD — HERO SUB-HEADLINE OVERFLOW PROTECTION ===
+
+Even with the row sizing fixed, the sub-headline "In X minutes on AI sites..." is dynamically generated and could be longer with different data patterns. Add protection so it never gets clipped:
+
+In .hero-sub:
+  - Remove any fixed height
+  - Use overflow: visible (default)
+  - Add line-clamp: 2 with white-space: normal if the line count threatens overflow
+
+Actually simpler: keep the current design, just ensure the hero row has enough room. The previous code worked for all data patterns — we just need to give it back the pixels we took away.
+
+=== VERIFICATION ===
+
+After fix, verify badge in ALL of these states:
+
+1. Real data, 1 country (e.g., US only): hero fully visible, map map fully visible, destinations-list shows "UNITED STATES · N"
+
+2. Fake inject, 3 countries (US · FR · CN): hero fully visible, map shows 3 arcs, destinations-list shows all 3 countries on one line
+
+3. Empty state (counters.total === 0): hero shows the pedagogical empty message, map-band shows the empty-note italic text "Waiting for your first AI request..."
+
+4. Download card: export PNG matches on-screen rendering for each state
+
+Total badge height must be 750px ± 2px in all states.
+
+=== COMMIT PLAN ===
+
+Only commit after Jon validates visually in all 3 states (real, fake, empty). Squash with 04.7.3:
+  git add report/styles.css
+  git commit --amend -m "fix: destinations-list visible without squeezing hero — rebalance badge row heights
+
+  - Reduce #worldmap max-height 175px → 135px (was 145px, reduced further to fit list)
+  - Remove overflow:hidden on .map-band
+  - Set .map-band min-height: 210px (tested with 1, 3, and empty-state data)
+  - Total badge stays 600×750
+
+  Tested in real-data, fake-inject multi-country, and empty states. No clipping in any state."
+  git push --force-with-lease

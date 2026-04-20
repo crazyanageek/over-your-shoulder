@@ -312,10 +312,11 @@ Destination hostname           Which service received the request
 Destination path (truncated)   Category inference (email, code, etc.)
 Tab identifier                 Counting requests per session
 Source site                    The page that initiated the request
+Endpoint type                  AI service vs. embedded monitoring
 ```
 
 **Text under table**:
-> *"These five fields are stored locally, in your browser, in the extension's own private storage. They are flushed to disk every 30 seconds and rotated out after 30 days. The service worker never connects to any external endpoint — neither to us, nor to any third party."*
+> *"These six fields are stored locally, in your browser, in the extension's own private storage. They are flushed to disk every 30 seconds and rotated out after 30 days. The service worker never connects to any external endpoint — neither to us, nor to any third party. AI platforms embed third-party monitoring services — Datadog, Sentry, analytics trackers — that receive data alongside the AI service itself. These are counted in the total request volume on page 2, but the geographic breakdown on page 3 shows only AI destinations to keep the map focused."*
 
 ### Section 2 — What OYS does not record
 
@@ -453,14 +454,14 @@ IP addresses                       Not captured
 
 ### Closing note
 
-> *"Over Your Shoulder is a tool for insight, not control. It tells you where your data goes. It does not stop it from going there. If the patterns shown in this report concern you, the right next step is to change your habits, not to install another extension. For organizations that want deeper visibility into AI-driven data flows — across teams, across tools — we are building [Symbiont](https://my-insights.ch)."*
+> *"Over Your Shoulder is a tool for insight, not control. It tells you where your data goes. It does not stop it from going there. If the patterns shown in this report concern you, the right next step is to change your habits, not to install another extension. For organizations that want deeper visibility into AI-driven data flows — across teams, across tools — we are building [Symbiont](https://myinsights.ch)."*
 
 ### Footer
 
 ```
 overyourshoulder.ch · contact@overyourshoulder.ch
 
-© {year} [My Insights](https://my-insights.ch) · Lausanne, Switzerland
+© {year} [My Insights](https://myinsights.ch) · Lausanne, Switzerland
 Report generated on {date} at {time}
 ```
 

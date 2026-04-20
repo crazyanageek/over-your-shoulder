@@ -35,6 +35,45 @@ const HOST_GEO = {
   "api.groq.com":                       { city: "Mountain View", country: "US", coords: [-122.08, 37.39] },
   "api.deepseek.com":                   { city: "Hangzhou",      country: "CN", coords: [120.16, 30.26] },
   "chat.deepseek.com":                  { city: "Hangzhou",      country: "CN", coords: [120.16, 30.26] },
+
+  // --- Phase 07.1 additions: 36 new ai_direct hosts. Monitoring/analytics/
+  // feature-flag hosts stay out of HOST_GEO by design (see prompts/07-answers.txt). ---
+  "notebooklm.google.com":              { city: "Mountain View", country: "US", coords: [-122.08, 37.39] },
+  "character.ai":                       { city: "Menlo Park",    country: "US", coords: [-122.18, 37.45] },
+  "beta.character.ai":                  { city: "Menlo Park",    country: "US", coords: [-122.18, 37.45] },
+  "poe.com":                            { city: "Mountain View", country: "US", coords: [-122.08, 37.39] },
+  "you.com":                            { city: "Palo Alto",     country: "US", coords: [-122.14, 37.44] },
+  "phind.com":                          { city: "San Francisco", country: "US", coords: [-122.42, 37.77] },
+  "meta.ai":                            { city: "Menlo Park",    country: "US", coords: [-122.18, 37.45] },
+  "duck.ai":                            { city: "Paoli",         country: "US", coords: [-75.50, 40.04] },
+  "inflection.ai":                      { city: "Palo Alto",     country: "US", coords: [-122.14, 37.44] },
+  "api.githubcopilot.com":              { city: "San Francisco", country: "US", coords: [-122.42, 37.77] },
+  "copilot-proxy.githubusercontent.com": { city: "San Francisco", country: "US", coords: [-122.42, 37.77] },
+  "api.cursor.sh":                      { city: "San Francisco", country: "US", coords: [-122.42, 37.77] },
+  "api2.cursor.sh":                     { city: "San Francisco", country: "US", coords: [-122.42, 37.77] },
+  "cursor.com":                         { city: "San Francisco", country: "US", coords: [-122.42, 37.77] },
+  "codeium.com":                        { city: "Mountain View", country: "US", coords: [-122.08, 37.39] },
+  "server.codeium.com":                 { city: "Mountain View", country: "US", coords: [-122.08, 37.39] },
+  "windsurf.com":                       { city: "Mountain View", country: "US", coords: [-122.08, 37.39] },
+  "api.tabnine.com":                    { city: "Tel Aviv",      country: "IL", coords: [34.78, 32.08] },
+  "v0.dev":                             { city: "San Francisco", country: "US", coords: [-122.42, 37.77] },
+  "v0.app":                             { city: "San Francisco", country: "US", coords: [-122.42, 37.77] },
+  "bolt.new":                           { city: "San Francisco", country: "US", coords: [-122.42, 37.77] },
+  "lovable.dev":                        { city: "Stockholm",     country: "SE", coords: [18.07, 59.33] },
+  "elevenlabs.io":                      { city: "New York",      country: "US", coords: [-74.00, 40.71] },
+  "api.elevenlabs.io":                  { city: "New York",      country: "US", coords: [-74.00, 40.71] },
+  "runwayml.com":                       { city: "New York",      country: "US", coords: [-74.00, 40.71] },
+  "app.runwayml.com":                   { city: "New York",      country: "US", coords: [-74.00, 40.71] },
+  "suno.com":                           { city: "Cambridge",     country: "US", coords: [-71.11, 42.37] },
+  "udio.com":                           { city: "New York",      country: "US", coords: [-74.00, 40.71] },
+  "lumalabs.ai":                        { city: "Palo Alto",     country: "US", coords: [-122.14, 37.44] },
+  "consensus.app":                      { city: "Boston",        country: "US", coords: [-71.06, 42.36] },
+  "elicit.com":                         { city: "Oakland",       country: "US", coords: [-122.27, 37.80] },
+  "elicit.org":                         { city: "Oakland",       country: "US", coords: [-122.27, 37.80] },
+  "scispace.com":                       { city: "Bangalore",     country: "IN", coords: [77.59, 12.97] },
+  "otter.ai":                           { city: "Mountain View", country: "US", coords: [-122.08, 37.39] },
+  "fireflies.ai":                       { city: "San Francisco", country: "US", coords: [-122.42, 37.77] },
+  "app.fireflies.ai":                   { city: "San Francisco", country: "US", coords: [-122.42, 37.77] },
 };
 
 const COUNTRY_NAME = {
@@ -84,10 +123,18 @@ const CITY_TIMEZONES = {
   "Mountain View": "America/Los_Angeles",
   "Redmond":       "America/Los_Angeles",
   "Palo Alto":     "America/Los_Angeles",
+  "Menlo Park":    "America/Los_Angeles",
+  "Oakland":       "America/Los_Angeles",
   "New York":      "America/New_York",
+  "Boston":        "America/New_York",
+  "Cambridge":     "America/New_York",
+  "Paoli":         "America/New_York",
   "Paris":         "Europe/Paris",
+  "Stockholm":     "Europe/Stockholm",
   "Toronto":       "America/Toronto",
   "Hangzhou":      "Asia/Shanghai",
+  "Tel Aviv":      "Asia/Jerusalem",
+  "Bangalore":     "Asia/Kolkata",
 };
 
 /* Short anecdotes about what lives in each city — used by {cityBreakdown}.
@@ -972,31 +1019,43 @@ function buildTokens(all) {
   const byHost = counters.byHost || {};
   const bySourceCategory = counters.bySourceCategory || {};
 
-  // Country
+  // 07.2 / 07.3 — ai_direct-filtered aggregates feed the page-3 microlist
+  // AND the page-4 Section 3 Geography variant/microblock so both pages
+  // describe the same user reality. Page-6 tokens (topDestinationShare,
+  // percentToChina) stay on unfiltered byCountry: the CLOUD Act / China
+  // framing there is about "where the data went" in a legal-jurisdiction
+  // sense, which includes monitoring endpoints.
   const userCountry = all._userCountry || null;  // set by caller
-  const [topCountry, topCountryCount] = topEntry(byCountry);
-  const topCountryShare = total > 0 && topCountryCount
-    ? Math.round((topCountryCount / total) * 100) : 0;
+  const aiDirectByCountry = all._aiDirectByCountry || {};
+  const aiDirectByHost = all._aiDirectByHost || {};
+  const totalAiDirect = Object.values(aiDirectByCountry).reduce((s, n) => s + n, 0);
+
+  // Country (filtered — drives page-3 microlist, page-4 variant + microblock)
+  const [topCountry, topCountryCount] = topEntry(aiDirectByCountry);
+  const topCountryShare = totalAiDirect > 0 && topCountryCount
+    ? Math.round((topCountryCount / totalAiDirect) * 100) : 0;
+
+  // Page-6 tokens (unfiltered — legal-jurisdiction framing)
   const usTotal = byCountry.US || 0;
   const cnTotal = byCountry.CN || 0;
   const topDestinationShare = total > 0 ? Math.round((usTotal / total) * 100) : 0;
   const percentToChina = total > 0 ? Math.round((cnTotal / total) * 100) : 0;
 
-  // Cross-border
+  // Cross-border (filtered)
   let crossBorderCount = 0;
-  for (const [cc, n] of Object.entries(byCountry)) {
+  for (const [cc, n] of Object.entries(aiDirectByCountry)) {
     if (userCountry && cc !== userCountry) crossBorderCount += n;
   }
-  const percentCrossingBorders = total > 0
-    ? Math.round((crossBorderCount / total) * 100) : 0;
+  const percentCrossingBorders = totalAiDirect > 0
+    ? Math.round((crossBorderCount / totalAiDirect) * 100) : 0;
 
-  const countryCount = Object.keys(byCountry).length;
-  const foreignCountryCount = userCountry && byCountry[userCountry]
+  const countryCount = Object.keys(aiDirectByCountry).length;
+  const foreignCountryCount = userCountry && aiDirectByCountry[userCountry]
     ? Math.max(0, countryCount - 1) : countryCount;
 
-  // Cities (from HOST_GEO)
+  // Cities (from HOST_GEO, only ai_direct hosts contribute).
   const cityKeys = new Set();
-  for (const host of Object.keys(byHost)) {
+  for (const host of Object.keys(aiDirectByHost)) {
     const geo = HOST_GEO[host];
     if (geo) cityKeys.add(geo.coords.join(","));
   }
@@ -1211,10 +1270,33 @@ async function initFull() {
     // 05.3 — score history (seed retroactively on first run, then update today).
     const scoreHistory = await seedOrUpdateScoreHistory(all, score);
 
+    // 07.2 — ai_direct-only byHost / byCountry aggregates drive the 7 geo
+    // tokens + microlist under the page-3 map. Monitoring / analytics /
+    // feature-flag events are excluded so the geo breakdown stays aligned
+    // with HOST_GEO (which only carries AI hosts by design). Unfiltered
+    // counters still drive everything else: topCountry, percentCrossing-
+    // Borders, topDestinationShare, percentToChina, cityBreakdown / country-
+    // Summary (page 1), and ctx-level variant selection (to keep page 4).
+    const aiDirectByHost = {};
+    const aiDirectByCountry = {};
+    for (const [key, value] of Object.entries(all)) {
+      if (!key.startsWith(EVENTS_PREFIX) || !Array.isArray(value)) continue;
+      for (const ev of value) {
+        if (!ev || ev.endpointType !== "ai_direct") continue;
+        if (ev.hostname) {
+          aiDirectByHost[ev.hostname] = (aiDirectByHost[ev.hostname] || 0) + 1;
+        }
+        if (ev.endpointCountry) {
+          aiDirectByCountry[ev.endpointCountry] =
+            (aiDirectByCountry[ev.endpointCountry] || 0) + 1;
+        }
+      }
+    }
+
     // 05.3 — compute the 14 previously-deferred tokens.
     const historyTokens = computeHistoryTokens(scoreHistory, score.score);
-    const geoTokens = computeGeoDistanceTokens(counters.byHost, userCountry);
-    const timezoneCount = computeTimezoneCount(counters.byHost);
+    const geoTokens = computeGeoDistanceTokens(aiDirectByHost, userCountry);
+    const timezoneCount = computeTimezoneCount(aiDirectByHost);
     const continuityTrend = computeContinuityTrend(daysObserved);
     const cityBreakdown = buildCityBreakdown(counters.byHost);
     const countrySummary = buildCountrySummary(userCountry, counters.byCountry, counters.total || 0);
@@ -1224,6 +1306,8 @@ async function initFull() {
     all._exposure = exposure;
     all._hourly = hourly;
     all._score = score;
+    all._aiDirectByHost = aiDirectByHost;
+    all._aiDirectByCountry = aiDirectByCountry;
 
     const { tokens, ...ctx } = buildTokens(all);
 

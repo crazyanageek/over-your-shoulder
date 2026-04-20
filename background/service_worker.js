@@ -138,6 +138,7 @@ chrome.webRequest.onBeforeRequest.addListener(
       endpointVendor: ep.vendor || null,
       endpointCountry: ep.country || null,
       endpointCategory: ep.category || null,
+      endpointType: ep.type || null,
       pathname: pathname.slice(0, PATHNAME_LIMIT),
       tabId: typeof details.tabId === "number" ? details.tabId : -1,
       initiator: initiatorHost,

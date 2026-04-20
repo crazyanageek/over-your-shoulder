@@ -1,0 +1,270 @@
+Phase 07.1 — Expand endpoint coverage for AI services and third-party monitoring
+
+=== GOAL ===
+
+Expand OYS from 27 observed domains to ~80-90, covering:
+- Additional AI services (use.ai, Character.AI, Poe, Cursor, Codeium, ElevenLabs, Runway, etc.)
+- Third-party monitoring/tracking services that many AI platforms embed (Datadog, Sentry, Segment, Statsig, etc.)
+
+Introduce an internal "type" field on each endpoint entry, for future product exploitation. Zero editorial changes to the PDF report or badge for this phase — new events just increase the counts in existing buckets.
+
+=== SCOPE DECISIONS (agreed with Jon) ===
+
+- ~50 AI services covered (adding ~23 to the current 27)
+- ~25 monitoring/tracking services covered (adding a new category)
+- Typology introduced in data but NOT surfaced in UI/PDF for this phase
+- Minimal changes outside of data/endpoints.json, manifest.json, and the service worker's categorization logic
+- Report text, badge, scoring formula, landing page all UNCHANGED
+
+=== STEP 1 — REVIEW CURRENT SHAPE OF endpoints.json ===
+
+Open data/endpoints.json. Report back its current structure (field names, example entry). Likely shape:
+
+  {
+    "hostname": "api.openai.com",
+    "vendor": "OpenAI",
+    "country": "US",
+    "city": "San Francisco",
+    "coords": [-122.42, 37.77],
+    "category": "ai_chat"
+  }
+
+Or similar. Before I touch anything I need confirmation of the actual fields.
+
+=== STEP 2 — ADD "type" FIELD TO EACH ENTRY ===
+
+Add a new string field `type` to every entry. Values:
+- "ai_direct" — service that directly processes user prompts (ChatGPT, Claude, Gemini, Mistral, etc.)
+- "monitoring" — RUM / error tracking / session replay (Datadog, Sentry, LogRocket, FullStory, Hotjar, Clarity)
+- "analytics" — user behavior analytics (Segment, Mixpanel, Amplitude, PostHog, Heap, GA, GTM, Plausible, Fathom)
+- "feature_flags" — experimentation/feature flag services (Statsig, LaunchDarkly)
+
+Backfill all 27 existing entries with `type: "ai_direct"`.
+
+The `category` field keeps its current values ("ai_chat", "ai_api", etc.) which are about the user-facing nature of the service. The new `type` field is about the architectural role.
+
+=== STEP 3 — ADD 23 NEW AI SERVICES (type: "ai_direct") ===
+
+Add these entries to data/endpoints.json. Coordinates for city fields are approximate (center of the city):
+
+AI chat/assistants:
+- use.ai → US, San Francisco, [-122.42, 37.77], "ai_chat"
+- character.ai → US, Menlo Park, [-122.18, 37.45], "ai_chat"
+- beta.character.ai → US, Menlo Park, [-122.18, 37.45], "ai_chat"
+- poe.com → US, Mountain View, [-122.08, 37.39], "ai_chat"
+- you.com → US, Palo Alto, [-122.14, 37.44], "ai_chat"
+- phind.com → US, San Francisco, [-122.42, 37.77], "ai_chat"
+- meta.ai → US, Menlo Park, [-122.18, 37.45], "ai_chat"
+- notebooklm.google.com → US, Mountain View, [-122.08, 37.39], "ai_chat"
+- duck.ai → US, Paoli, [-75.5, 40.04], "ai_chat"
+- chat.mistral.ai → FR, Paris, [2.35, 48.86], "ai_chat" (verify not already present)
+- inflection.ai → US, Palo Alto, [-122.14, 37.44], "ai_chat"
+
+AI code assistants:
+- api.githubcopilot.com → US, San Francisco, [-122.42, 37.77], "ai_api"
+- copilot-proxy.githubusercontent.com → US, San Francisco, [-122.42, 37.77], "ai_api"
+- api.cursor.sh → US, San Francisco, [-122.42, 37.77], "ai_api"
+- api2.cursor.sh → US, San Francisco, [-122.42, 37.77], "ai_api"
+- cursor.com → US, San Francisco, [-122.42, 37.77], "ai_chat"
+- codeium.com → US, Mountain View, [-122.08, 37.39], "ai_chat"
+- server.codeium.com → US, Mountain View, [-122.08, 37.39], "ai_api"
+- windsurf.com → US, Mountain View, [-122.08, 37.39], "ai_chat"
+- api.tabnine.com → IL, Tel Aviv, [34.78, 32.08], "ai_api"
+- v0.dev → US, San Francisco, [-122.42, 37.77], "ai_chat"
+- v0.app → US, San Francisco, [-122.42, 37.77], "ai_chat"
+- bolt.new → US, San Francisco, [-122.42, 37.77], "ai_chat"
+- lovable.dev → SE, Stockholm, [18.07, 59.33], "ai_chat"
+
+AI image/video/audio:
+- elevenlabs.io → US, New York, [-74.00, 40.71], "ai_chat"
+- api.elevenlabs.io → US, New York, [-74.00, 40.71], "ai_api"
+- runwayml.com → US, New York, [-74.00, 40.71], "ai_chat"
+- app.runwayml.com → US, New York, [-74.00, 40.71], "ai_chat"
+- suno.com → US, Cambridge, [-71.11, 42.37], "ai_chat"
+- udio.com → US, New York, [-74.00, 40.71], "ai_chat"
+- lumalabs.ai → US, Palo Alto, [-122.14, 37.44], "ai_chat"
+
+AI research/search:
+- consensus.app → US, Boston, [-71.06, 42.36], "ai_chat"
+- elicit.com → US, Oakland, [-122.27, 37.80], "ai_chat"
+- elicit.org → US, Oakland, [-122.27, 37.80], "ai_chat"
+- scispace.com → IN, Bangalore, [77.59, 12.97], "ai_chat"
+
+AI productivity:
+- otter.ai → US, Mountain View, [-122.08, 37.39], "ai_api"
+- fireflies.ai → US, San Francisco, [-122.42, 37.77], "ai_api"
+- app.fireflies.ai → US, San Francisco, [-122.42, 37.77], "ai_chat"
+
+All receive `type: "ai_direct"`.
+
+=== STEP 4 — ADD 25 MONITORING/ANALYTICS/FEATURE-FLAGS SERVICES ===
+
+These are shared services embedded by many AI platforms. Add with the appropriate `type` value.
+
+--- Monitoring (type: "monitoring") ---
+
+- browser-intake-datadoghq.com → US, New York, [-74.00, 40.71], "monitoring_rum"
+- browser-intake-us5-datadoghq.com → US, San Francisco, [-122.42, 37.77], "monitoring_rum"
+- browser-intake-eu1-datadoghq.com → DE, Frankfurt, [8.68, 50.11], "monitoring_rum"
+- public-trace-http-intake.logs.datadoghq.com → US, New York, [-74.00, 40.71], "monitoring_logs"
+- sentry.io → US, San Francisco, [-122.42, 37.77], "monitoring_errors"
+- ingest.sentry.io → US, San Francisco, [-122.42, 37.77], "monitoring_errors"
+- o0.ingest.us.sentry.io → US, San Francisco, [-122.42, 37.77], "monitoring_errors"
+- o0.ingest.eu.sentry.io → IE, Dublin, [-6.26, 53.34], "monitoring_errors"
+- rs.fullstory.com → US, Atlanta, [-84.39, 33.75], "monitoring_session"
+- r.lr-ingest.io → US, San Francisco, [-122.42, 37.77], "monitoring_session"
+- cdn.lr-ingest.io → US, San Francisco, [-122.42, 37.77], "monitoring_session"
+- cdn.logrocket.com → US, Boston, [-71.06, 42.36], "monitoring_session"
+- script.hotjar.com → MT, Valletta, [14.51, 35.90], "monitoring_session"
+- static.hotjar.com → MT, Valletta, [14.51, 35.90], "monitoring_session"
+- www.clarity.ms → US, Redmond, [-122.12, 47.67], "monitoring_session"
+
+--- Analytics (type: "analytics") ---
+
+- api.segment.io → US, San Francisco, [-122.42, 37.77], "analytics_events"
+- cdn.segment.com → US, San Francisco, [-122.42, 37.77], "analytics_events"
+- api.mixpanel.com → US, San Francisco, [-122.42, 37.77], "analytics_events"
+- api-js.mixpanel.com → US, San Francisco, [-122.42, 37.77], "analytics_events"
+- app.posthog.com → US, San Francisco, [-122.42, 37.77], "analytics_events"
+- us.i.posthog.com → US, San Francisco, [-122.42, 37.77], "analytics_events"
+- eu.i.posthog.com → DE, Frankfurt, [8.68, 50.11], "analytics_events"
+- api.amplitude.com → US, San Francisco, [-122.42, 37.77], "analytics_events"
+- api2.amplitude.com → US, San Francisco, [-122.42, 37.77], "analytics_events"
+- heap.io → US, San Francisco, [-122.42, 37.77], "analytics_events"
+- heapanalytics.com → US, San Francisco, [-122.42, 37.77], "analytics_events"
+- www.google-analytics.com → US, Mountain View, [-122.08, 37.39], "analytics_events"
+- www.googletagmanager.com → US, Mountain View, [-122.08, 37.39], "analytics_events"
+- region1.google-analytics.com → US, Mountain View, [-122.08, 37.39], "analytics_events"
+- plausible.io → DE, Frankfurt, [8.68, 50.11], "analytics_events"
+- cdn.usefathom.com → US, Chicago, [-87.65, 41.88], "analytics_events"
+
+--- Feature flags (type: "feature_flags") ---
+
+- statsigapi.net → US, Seattle, [-122.33, 47.61], "feature_flags"
+- events.statsigapi.net → US, Seattle, [-122.33, 47.61], "feature_flags"
+- api.statsig.com → US, Seattle, [-122.33, 47.61], "feature_flags"
+- app.launchdarkly.com → US, Oakland, [-122.27, 37.80], "feature_flags"
+- events.launchdarkly.com → US, Oakland, [-122.27, 37.80], "feature_flags"
+- statsig.anthropic.com → US, San Francisco, [-122.42, 37.77], "feature_flags"
+
+Each gets the appropriate `type` value (monitoring / analytics / feature_flags).
+
+NOTE: the category field is NEW for these entries. Use values like "monitoring_rum", "monitoring_errors", "monitoring_session", "monitoring_logs", "analytics_events", "feature_flags". These are internal labels; no UI surfaces them yet.
+
+=== STEP 5 — UPDATE manifest.json host_permissions ===
+
+Add matching `https://<hostname>/*` entries for each new domain in host_permissions. Follow exactly the existing pattern.
+
+For wildcards: DO NOT use `*.datadoghq.com` style wildcards. Chrome Web Store requires explicit hosts when possible. List each subdomain explicitly as it appears in endpoints.json.
+
+The final count should be ~80-90 entries. Verify no duplicates.
+
+=== STEP 6 — UPDATE service worker's categorization ===
+
+Open background/service_worker.js. Find the webRequest listener or wherever endpoints are matched to metadata.
+
+When an event is captured, the counter should increment in whatever buckets exist today (byVendor, byCountry, byHost). THAT STAYS THE SAME.
+
+The only addition: also store the `type` field of the matched endpoint in the event record. So each oys_events_YYYYMMDD entry now looks like:
+
+  {
+    ts: 1728123456789,
+    hostname: "browser-intake-us5-datadoghq.com",
+    pathname: "/api/v2/rum",
+    tabId: 42,
+    initiator: "https://claude.ai",
+    vendor: "Datadog",          // new — or derived from endpoints.json
+    country: "US",               // already there
+    category: "monitoring_rum",  // already there
+    type: "monitoring"           // NEW — this field
+  }
+
+Adapt the byVendor counter: currently it buckets by vendor. For monitoring/analytics services, vendor is the service itself (Datadog, Sentry, Mixpanel, etc.).
+
+IMPORTANT: when a monitoring event is captured from claude.ai (initiator: claude.ai), we should NOT double-count. Each observed outbound request is one event, period. The initiator is just context.
+
+=== STEP 7 — UPDATE lib/score.js if needed ===
+
+The scoring formula (4 factors: Volume, Categories, Geography, Continuity) doesn't change.
+
+But verify: does `categoriesScore` currently count distinct categories from counters.byCategory? If yes, it will now see new categories (monitoring_rum, analytics_events, etc.) and could give a higher categoriesScore than before for the same user.
+
+TWO OPTIONS:
+
+Option A — Don't let monitoring/analytics types contribute to categoriesScore.
+Only ai_direct events contribute to the "sensitive categories touched" count.
+
+Option B — Let them contribute. User sees their categoriesScore increase because now OYS captures more categories.
+
+Decision needed from Jon. For this phase, go with Option A (minimal surprise to existing users, preserves current scoring semantics). Implement: filter counters.byCategory to only include types matching ai_direct when computing categoriesScore.
+
+=== STEP 8 — TEST WITH REAL AND FAKE DATA ===
+
+1. Reset storage: chrome.storage.local.clear() in console, reload
+2. Use claude.ai for a few minutes — observe that events are captured AND the monitoring events (Datadog calls) now appear in counters.byHost
+3. Use chatgpt.com for a few minutes — same check
+4. Open the full report PDF — it should render identically to before, but with MORE total requests, MORE distinct hosts, possibly more countries
+5. Verify the badge renders correctly with the new data volume
+6. Verify the badge's 3-stats row still displays coherent numbers
+
+=== STEP 9 — UPDATE PRIVACY POLICY (minimal) ===
+
+In the landing repo, update /src/pages/privacy.astro section 3 "Data collected by the extension" to mention that the extension now observes both direct AI service traffic AND third-party monitoring/analytics services embedded by those platforms. One or two sentences, no restructuring.
+
+New wording for the observed domains list:
+
+  "The extension observes outbound network requests made by the user's browser to a predefined list of AI service hostnames, as well as to common monitoring, analytics, and feature-flag services embedded by these AI platforms (such as Datadog, Sentry, Segment, Statsig). For each observed request, the extension records the following five fields of metadata: [...]"
+
+No other change to privacy policy needed.
+
+=== STEP 10 — REGENERATE .ZIP ===
+
+After all changes validated, regenerate the webstore package:
+
+1. Bump manifest.json version: "1.0.0" → "1.0.0" (still 1.0.0, we haven't shipped 1.0.0 to the store yet — the version on disk just gets the expanded endpoints, no actual version change needed unless you've pushed 1.0.0 already, in which case bump to 1.1.0)
+
+IF the first zip has already been uploaded to the Chrome Web Store, bump to 1.1.0.
+IF the zip was packaged but not yet uploaded, keep 1.0.0.
+
+2. Follow the STEP 4 of prompts/06-6-1-webstore-package.txt to regenerate oys-webstore-v1.0.0.zip (or v1.1.0.zip).
+
+3. Test via load-unpacked again.
+
+=== VERIFICATION CHECKLIST ===
+
+Before commit:
+- manifest.json has ~80-90 host_permissions, no wildcards, no duplicates
+- data/endpoints.json has ~80-90 entries, each with hostname/vendor/country/city/coords/category/type
+- All 27 original entries now have type: "ai_direct"
+- 23 new AI entries have type: "ai_direct"
+- ~25 new monitoring/analytics/feature_flags entries have their appropriate type
+- Extension loads without errors
+- Events from claude.ai, chatgpt.com AND from Datadog/Sentry calls are all captured
+- Badge renders correctly
+- Full report renders correctly
+- PDF generation unchanged visually
+- Tests pass with both real and fake data
+
+Commit after Jon validates:
+  git add manifest.json data/endpoints.json background/service_worker.js lib/score.js
+  git commit -m "feat: expand endpoint coverage — 50 AI services + 25 monitoring/analytics services
+
+  - Added 23 AI services (use.ai, Character.AI, Poe, Cursor, Codeium, ElevenLabs, Runway, Suno, etc.)
+  - Added 25 shared monitoring/analytics/feature-flags services (Datadog, Sentry, Segment, Mixpanel, PostHog, Statsig, etc.)
+  - Introduced 'type' field on endpoint entries (ai_direct / monitoring / analytics / feature_flags) for future exploitation
+  - Scoring formula unchanged; categoriesScore only counts ai_direct categories to preserve current semantics
+  - Privacy policy updated with minimal wording about monitoring observation"
+  git push
+
+The landing repo also needs a commit for the privacy.astro change:
+  git add src/pages/privacy.astro
+  git commit -m "docs: privacy policy — mention monitoring/analytics service observation"
+  git push
+
+=== NOT IN SCOPE ===
+
+- New UI for showing ai_direct vs monitoring split (deferred — add later if useful)
+- New text in PDF report about monitoring services (deferred — content stays as-is)
+- Badge layout change (no change needed, counters just increase)
+- Landing page change beyond privacy section (not needed)
+- Repackage of the Chrome Web Store .zip (done in Step 10)

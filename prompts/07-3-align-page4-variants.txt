@@ -1,0 +1,136 @@
+# Phase 07.3 — Align ctx.countryCount with ai_direct filter
+
+## Context
+
+Phase 07.2 introduced an ai_direct filter for page 3 Block 4 geographic
+tokens (cityCount, countryCount, etc.) to keep the map's micro-list
+consistent with the map itself.
+
+During that phase, `ctx.countryCount` (used for variant selection on
+page 4 "Understanding the score", Section 3 Geography) was deliberately
+left unfiltered to keep page 4 logic untouched.
+
+This created an edge case: a user hitting only US-based AI services
+(ai_direct) plus an EU monitoring service (e.g. Datadog-EU) would see:
+- Page 3 Block 4: "1 country contacted" (filtered)
+- Page 4 Section 3: "multi-country with cross-border" variant (unfiltered,
+  counts 2 countries)
+
+This is a direct contradiction. Page 3 and page 4 describe the same user
+reality and must agree.
+
+## Scope
+
+Align `ctx.countryCount` on the filtered ai_direct value so that variant
+selection on page 4 uses the same semantics as page 3 Block 4.
+
+Also verify that the page 4 variant selection logic (allDomestic /
+allForeign / multiCountry) remains coherent with the new filtered
+semantics — specifically:
+
+- The "allDomestic" variant fires when 100% of traffic stayed within
+  userCountry. With the filter, this means 100% of ai_direct traffic,
+  which is the correct interpretation.
+- The "allForeign" variant fires when 100% of traffic went abroad. Same
+  logic applies to filtered ai_direct.
+- The "multiCountry" variant fires otherwise.
+
+The question to verify: are the OTHER tokens feeding page 4 Section 3
+(topCountry, topCountryShare, percentCrossingBorders, topDestinationShare,
+percentToChina) also sourced from unfiltered byCountry? If yes, they
+must also be reviewed — otherwise the variant selection and the
+percentages inside the variant text will disagree (e.g. variant says
+"allForeign" but topCountryShare is 60% because it includes monitoring).
+
+## NOT in scope
+
+- No changes to lib/score.js
+- No changes to the badge
+- No changes to pages 1, 2, 3, 5, 6, 7, 8
+- No changes to data/endpoints.json, manifest.json, service_worker.js
+- No changes to HOST_GEO
+
+## Changes required
+
+### Change 1 — ctx.countryCount
+
+Locate where `ctx.countryCount` is assigned (currently `countryCountAll`,
+non-filtered, per the 07.2 summary). Replace with the filtered value —
+the same one already computed for `tokens.countryCount`.
+
+After this change, `tokens.countryCount` and `ctx.countryCount` point
+to the same computed value.
+
+### Change 2 — audit page 4 Section 3 Geography tokens
+
+Identify every token consumed by the page 4 Section 3 variant text
+(the three variants: multi-country, allDomestic, allForeign) and the
+associated micro-block:
+
+- topCountry
+- topCountryShare
+- crossBorderShare
+- percentCrossingBorders
+- topDestinationShare (may be on page 6 Block 1, not page 4 — verify)
+- percentToChina (page 6 Block 4)
+- geographyScore (lib/score.js — out of scope, do NOT change)
+
+For each, identify the source (filtered vs non-filtered byCountry).
+
+If any of these are computed from the non-filtered byCountry while
+ctx.countryCount is now filtered, the page 4 variant logic will select
+a branch that contradicts the percentages displayed inside it.
+
+Align all of them on filtered ai_direct, EXCEPT:
+- geographyScore (lib/score.js is out of scope)
+- anything on page 6 (pages 6/7/8 are out of scope, and the legal
+  frameworks page 6 references traffic differently — leave untouched).
+
+For tokens on page 6 (topDestinationShare, percentToChina if they live
+there): LEAVE UNFILTERED. Page 6 discusses legal jurisdictions and the
+semantics of "where did the data go" is broader than ai_direct. Flag
+this in the summary if it creates any visible inconsistency.
+
+### Change 3 — verify variant selection thresholds still make sense
+
+With the filter applied, a user who only hits monitoring services (no
+AI traffic) will have countryCount = 0 and no meaningful top country.
+Verify what page 4 Section 3 renders in that edge case:
+
+- Does chooseVariant handle countryCount === 0 gracefully?
+- Does the micro-block show "—" or similar for topCountry?
+- No crash, no empty strings.
+
+If this is not handled, add a guard clause that selects a sensible
+fallback (e.g. the allDomestic variant applied to "no AI traffic
+observed today" — but this is a judgment call, report back before
+implementing).
+
+## Deliverables
+
+- Modified: report/full.js (ctx.countryCount alignment, possibly other
+  token alignments per Change 2 audit)
+- No template changes expected
+- No editorial changes expected (phase-05-editorial.md untouched — the
+  editorial variant text still holds, we're only changing what feeds
+  the selection)
+
+## Report back
+
+- Confirmation that ctx.countryCount now equals tokens.countryCount
+- Full audit of page 4 Section 3 tokens: which are now filtered, which
+  remain unfiltered, and why
+- Any token that was changed from unfiltered to filtered, with the
+  before/after source
+- Edge case behavior for "monitoring-only user" (countryCount === 0)
+- Any flagged inconsistency between page 4 (filtered) and page 6
+  (unfiltered) that a reader might notice
+
+## Do NOT
+
+- Do not commit.
+- Do not regenerate the zip.
+- Do not touch lib/score.js, endpoints.json, manifest.json,
+  service_worker.js, report/report.js.
+- Do not touch page 6 tokens even if they look related.
+- Do not refactor beyond the alignment — keep the diff minimal.

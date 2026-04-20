@@ -174,7 +174,7 @@ Structure:
 - Closing note: a paragraph with slightly different styling (italic Fraunces for first phrase, then Inter for the rest)
 - Footer block:
   - overyourshoulder.ch · contact@overyourshoulder.ch
-  - © {year} [My Insights](https://my-insights.ch) · Lausanne, Switzerland
+  - © {year} [My Insights](https://myinsights.ch) · Lausanne, Switzerland
   - Report generated on {date} at {time}
 
 === PRINT BUTTON ===

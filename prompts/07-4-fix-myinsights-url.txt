@@ -1,0 +1,64 @@
+# Phase 07.4 — Fix myinsights.ch URL
+
+## Context
+
+The My Insights website URL is `myinsights.ch` (no hyphen).
+Several places in the codebase currently use `my-insights.ch` (with hyphen),
+which is wrong and produces a broken link.
+
+Confirmed occurrences in phase-05-editorial.md:
+- Line 456: closing note of page 8, Symbiont link
+- Line 463: footer copyright line
+
+These almost certainly appear in report/full.html as well. They may also
+appear in other places (report/report.js for the badge footer, popup UI,
+README, privacy policy, etc.).
+
+## Scope
+
+Replace every occurrence of `my-insights.ch` with `myinsights.ch` across
+the entire extension repository.
+
+Also verify there are no occurrences of `My-Insights.ch`, `My-insights.ch`,
+or other case variants with the hyphen.
+
+Do NOT touch any other URL, brand name, or link. The brand name "My
+Insights" (with the space, no hyphen) is correct and must remain.
+
+## NOT in scope
+
+- The landing page repo (separate repo, will be handled separately)
+- Any other URL correction
+- Any rewording of the surrounding text
+
+## Changes required
+
+1. Grep the full repo for `my-insights` (case-insensitive) to find all
+   occurrences — including in any privacy policy, README, manifest
+   description, popup, badge, or other files.
+2. Replace each occurrence with `myinsights`.
+3. Verify `https://my-insights.ch` → `https://myinsights.ch`, and
+   `my-insights.ch` standalone → `myinsights.ch`.
+4. Leave the displayed brand name "My Insights" (two words, space) intact.
+   Only the URL changes.
+
+## Deliverables
+
+- Full list of files modified with line numbers
+- Confirmation that no `my-insights` occurrence remains (grep returns empty)
+- Confirmation that the brand name "My Insights" (with space) still
+  appears correctly wherever it was before
+
+## Do NOT
+
+- Do not commit.
+- Do not regenerate the zip.
+- Do not touch any other URL.
+- Do not touch the landing repo (it's a separate repo, not in this
+  working directory).
+
+## Report back
+
+- List of files modified
+- Number of replacements made per file
+- Any ambiguous occurrence that was NOT replaced and why

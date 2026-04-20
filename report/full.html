@@ -254,8 +254,9 @@ Current pace          {continuityTrend}
         <div>Destination path (truncated)</div><div>Category inference (email, code, etc.)</div>
         <div>Tab identifier</div><div>Counting requests per session</div>
         <div>Source site</div><div>The page that initiated the request</div>
+        <div>Endpoint type</div><div>AI service vs. embedded monitoring</div>
       </div>
-      <p>These five fields are stored locally, in your browser, in the extension's own private storage. They are flushed to disk every 30 seconds and rotated out after 30 days. The service worker never connects to any external endpoint — neither to us, nor to any third party.</p>
+      <p>These six fields are stored locally, in your browser, in the extension's own private storage. They are flushed to disk every 30 seconds and rotated out after 30 days. The service worker never connects to any external endpoint — neither to us, nor to any third party. AI platforms embed third-party monitoring services — Datadog, Sentry, analytics trackers — that receive data alongside the AI service itself. These are counted in the total request volume on page 2, but the geographic breakdown on page 3 shows only AI destinations to keep the map focused.</p>
 
       <h3 class="h3">What OYS does not record</h3>
       <div class="records-table">
@@ -384,12 +385,12 @@ Current pace          {continuityTrend}
 
       <p class="closing-note">
         <span class="lede">Over Your Shoulder is a tool for insight, not control.</span>
-        It tells you where your data goes. It does not stop it from going there. If the patterns shown in this report concern you, the right next step is to change your habits, not to install another extension. For organizations that want deeper visibility into AI-driven data flows — across teams, across tools — we are building <a href="https://my-insights.ch" target="_blank" rel="noopener">Symbiont</a>.
+        It tells you where your data goes. It does not stop it from going there. If the patterns shown in this report concern you, the right next step is to change your habits, not to install another extension. For organizations that want deeper visibility into AI-driven data flows — across teams, across tools — we are building <a href="https://myinsights.ch" target="_blank" rel="noopener">Symbiont</a>.
       </p>
 
       <div class="page-footer">
         <div>overyourshoulder.ch · contact@overyourshoulder.ch</div>
-        <div>© {year} <a href="https://my-insights.ch" target="_blank" rel="noopener">My Insights</a> · Switzerland</div>
+        <div>© {year} <a href="https://myinsights.ch" target="_blank" rel="noopener">My Insights</a> · Switzerland</div>
         <div>Report generated on {date} at {time}</div>
       </div>
       <div class="page-number">08 / 08</div>

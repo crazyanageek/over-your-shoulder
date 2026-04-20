@@ -1,0 +1,188 @@
+Phase 06.3 support — Inject fake fixture data for landing page screenshots
+
+=== CONTEXT ===
+
+Jon needs screenshots of the badge and the full PDF report for the landing page (section 3 "What OYS shows you"). His current real data (1 day, 1 vendor, 1 city) would produce visually sparse screenshots that under-sell the product.
+
+This task creates a one-shot script that injects rich fake fixture data into chrome.storage.local, so Jon can open the extension normally, view a richly-populated badge and PDF, and take screenshots. After screenshots are done, he'll reset the storage back to his real data via the existing "Reset all data" setting.
+
+=== SCOPE ===
+
+Create a new file: /report/fixtures/inject-fake-data.js
+
+This is a standalone script that Jon will paste into his Chrome DevTools console when the extension's badge page is open. It writes fake data directly to chrome.storage.local, bypassing the normal capture mechanism.
+
+The script must:
+- Not be imported from anywhere in the extension (standalone debugging tool)
+- Not be committed to main (add to .gitignore? No — it's harmless, can stay)
+- Generate data that triggers FULL MODE in the PDF (daysObserved >= 3 AND totalRequests >= 500)
+- Produce a realistic multi-vendor, multi-country, multi-day profile
+- Be idempotent (running it twice gives the same result)
+
+=== FIXTURE DATA SPECIFICATION ===
+
+User profile: Swiss user (userCountry = "CH", origin Lausanne).
+
+14 days of activity, dates Apr 6 through Apr 19, 2026.
+
+Vendors (ordered by share):
+- Anthropic (Claude) — 40% — claude.ai + api.anthropic.com
+- OpenAI (ChatGPT) — 28% — chatgpt.com + api.openai.com
+- Mistral — 15% — chat.mistral.ai + api.mistral.ai
+- Google (Gemini) — 10% — gemini.google.com
+- Perplexity — 7% — perplexity.ai + api.perplexity.ai
+
+Total requests: 3,500.
+
+Distribution across 14 days (not flat — realistic variation):
+Day 1 (Apr 6): 180
+Day 2 (Apr 7): 240
+Day 3 (Apr 8): 290
+Day 4 (Apr 9): 220 (weekend dip)
+Day 5 (Apr 10): 340 (weekend bounce)
+Day 6 (Apr 11): 260
+Day 7 (Apr 12): 180 (weekend)
+Day 8 (Apr 13): 270
+Day 9 (Apr 14): 320
+Day 10 (Apr 15): 280
+Day 11 (Apr 16): 310
+Day 12 (Apr 17): 200 (weekend)
+Day 13 (Apr 18): 150 (weekend)
+Day 14 (Apr 19): 260 (today)
+
+Per-day hourly distribution: concentrated on weekdays 9h-19h, with a slight peak around 15h. Weekends distributed more evenly.
+
+Source categories touched (for categoriesScore):
+- email (via gmail → claude, etc.): ~8% of requests
+- code (via github, vscode): ~12%
+- documents (via notion, google docs): ~15%
+- communications (via slack): ~5%
+- other (non-sensitive): remainder
+Touches 4 sensitive categories → categoriesScore = 20/30.
+
+Geographic distribution (byCountry):
+- US: 2,450 (70%) — San Francisco, Mountain View, Palo Alto, New York
+- FR: 525 (15%) — Paris
+- GB: 175 (5%) — London (Gemini edge routing fake)
+- CA: 175 (5%) — Toronto (wait, no — remove, not in vendor list)
+- CN: 0 (don't touch China, keep percentToChina = 0)
+
+Revised without CA (not used by any vendor in list):
+- US: 2,625 (75%) — 4 US cities
+- FR: 525 (15%) — Paris
+- GB: 350 (10%) — London (if Gemini routes via UK) — or just 0 and bump US
+
+Simpler revised distribution:
+- US: 2,800 (80%) — San Francisco (1,400, Anthropic + OpenAI + Perplexity), Mountain View (700, Google), Palo Alto (400, OpenAI + xAI fallback), New York (300, split)
+- FR: 525 (15%) — Paris (Mistral)
+- CN: 175 (5%) — Hangzhou (DeepSeek — let's add a small DeepSeek presence to make Chinese jurisdiction section of the PDF display Variant A instead of B)
+
+Actually let's include DeepSeek for richer storytelling. Update vendor list:
+- Anthropic 38%
+- OpenAI 25%
+- Mistral 13%
+- Google 9%
+- Perplexity 7%
+- DeepSeek 5% (new — makes the China page of PDF more interesting)
+- xAI 3% (new — small sliver, Palo Alto)
+
+Total still ~3,500. Countries:
+- US: 2,625 (75%)
+- FR: 455 (13%)
+- CN: 175 (5%)
+- Plus small amounts scattered elsewhere as needed
+
+Score evolution over 14 days:
+Day 1: 28
+Day 2: 32
+Day 3: 35
+Day 4: 36 (weekend dip in accumulation)
+Day 5: 40
+Day 6: 42
+Day 7: 41 (weekend)
+Day 8: 44
+Day 9: 46
+Day 10: 48
+Day 11: 50
+Day 12: 49 (weekend)
+Day 13: 50 (weekend)
+Day 14: 52 (today)
+
+For the factors breakdown on each day, use a realistic split that sums to the day's score:
+- volume: scales with request count, up to 30
+- categories: grows to 20 as new categories are touched over time
+- geography: hovers at 20-25 (Switzerland → mostly US traffic)
+- continuity: grows from 2 on day 1 to 15 on day 7+
+
+=== IMPLEMENTATION ===
+
+The script should:
+
+1. Build the full oys_counters object:
+   {
+     total: 3500,
+     today: 260,
+     todayDate: "20260419",
+     schemaVersion: 2,
+     byHost: { "claude.ai": 1100, "api.anthropic.com": 230, "chatgpt.com": 700, "api.openai.com": 175, ... },
+     byVendor: { "Anthropic": 1330, "OpenAI": 875, "Mistral": 455, "Google": 315, "Perplexity": 245, "DeepSeek": 175, "xAI": 105 },
+     byCountry: { "US": 2625, "FR": 455, "CN": 175, "GB": ..., ... },
+     byCategory: { "ai_chat": 3200, "ai_api": 300 },
+     bySourceCategory: { "email": 280, "code": 420, "documents": 525, "communications": 175, "other": 2100 }
+   }
+
+2. Build oys_score_history as a 14-entry array sorted ascending:
+   [
+     { date: "2026-04-06", score: 28, factors: { volume: 12, categories: 5, geography: 10, continuity: 1 } },
+     { date: "2026-04-07", score: 32, factors: { volume: 15, categories: 5, geography: 10, continuity: 2 } },
+     ... all 14 days ...
+     { date: "2026-04-19", score: 52, factors: { volume: 27, categories: 20, geography: 25, continuity: 15 } }
+   ]
+
+3. For each day Apr 6-19, build an oys_events_YYYYMMDD array with the appropriate number of events for that day. Each event has shape:
+   { ts: timestamp_ms, hostname: "claude.ai", pathname: "/api/...", tabId: 123, initiator: "https://somesource.com" }
+   
+   Distribute events realistically across hours (peak 9-19, quiet night).
+   
+   For each event, pick a vendor proportional to its share. For each event, pick a source URL that maps to a sourceCategory that matches the overall distribution.
+
+4. Write all three objects to chrome.storage.local in one chrome.storage.local.set() call.
+
+5. Log a confirmation message with a summary:
+   "Fake fixtures injected. Reload the badge to see rich data. Run resetOYS() below to restore."
+
+6. Include at the bottom a helper function:
+   window.resetOYS = async () => {
+     await chrome.storage.local.clear();
+     console.log("Storage cleared. Reload the badge.");
+   };
+
+=== USAGE INSTRUCTIONS ===
+
+At the top of the script file, include a comment block explaining:
+
+/*
+ * OYS fake fixture injector
+ * 
+ * Usage:
+ * 1. Load the OYS extension in Chrome
+ * 2. Click the extension icon → open the badge (or navigate to chrome-extension://<ID>/report/index.html)
+ * 3. Open DevTools → Console
+ * 4. Paste this entire file's content into the console
+ * 5. Hit Enter
+ * 6. The script injects 14 days of fake activity into chrome.storage.local
+ * 7. Reload the badge tab — you'll see a rich multi-vendor, multi-country badge
+ * 8. Open the full report via the "Full Report" button — you'll see FULL MODE with 4 charts populated
+ * 9. Take your screenshots
+ * 10. To restore: run `resetOYS()` in the console, then reload
+ * 
+ * This file is NOT imported by the extension. It's a standalone debugging tool.
+ */
+
+=== DELIVERABLE ===
+
+One file: /report/fixtures/inject-fake-data.js
+
+Self-contained JavaScript that runs in the console of the badge page. Generates ~3,500 fake events distributed across 14 days, writes to chrome.storage.local, confirms in the log. Includes a reset helper.
+
+Do NOT commit. Jon will pull the file manually and use it, then reset his real data.

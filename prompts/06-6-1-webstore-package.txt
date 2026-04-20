@@ -1,0 +1,146 @@
+Phase 06.6.1 — Prepare the .zip package for Chrome Web Store submission
+
+=== GOAL ===
+
+Produce a clean .zip file containing the OYS extension, ready to upload to the Chrome Web Store developer dashboard.
+
+Target filename: oys-webstore-v1.0.0.zip (version matches manifest.json)
+
+=== STEP 1 — VERIFY manifest.json ===
+
+Open manifest.json at the project root and verify:
+
+1. `manifest_version: 3`
+2. `name`: current value is likely "Over Your Shoulder". This will show as the extension name in Chrome. Keep as-is unless we decide otherwise.
+3. `version`: current value probably "1.0.0" or similar. Verify it's a clean semver like "1.0.0". If it's something like "0.0.1" or "0.9.0-dev", update to "1.0.0" for initial public release.
+4. `description`: should be a short string under 132 characters (Chrome Web Store display limit). Current value might be empty or placeholder. Set it to:
+
+   "See where your AI data goes. A free, device-locked extension that observes outbound AI traffic."
+
+5. `icons`: verify 16x16, 48x48, 128x128 paths all exist and files are present
+6. `permissions`: list what's declared. Typical for OYS: ["storage", "webRequest", "alarms"]
+7. `host_permissions`: list the AI domains. These MUST be explicit, not a wildcard like "<all_urls>" which Google will reject or require extra justification.
+8. `action` or `browser_action`: popup HTML path
+9. `background.service_worker`: service worker path
+
+Report the current state of manifest.json so Jon can verify before packaging.
+
+=== STEP 2 — LIST FILES TO INCLUDE ===
+
+The .zip must contain all runtime files. Based on OYS structure, the included set should be:
+
+  /manifest.json
+  /background.js (or similar — the service worker)
+  /popup/*
+  /report/*
+  /lib/*
+  /data/*
+  /icons/*
+  /images/*   (if any; some extensions have this)
+
+Anything the extension loads at runtime must be included.
+
+=== STEP 3 — LIST FILES TO EXCLUDE ===
+
+Explicitly exclude:
+- .git/ (git history)
+- .gitignore
+- README.md (not needed in the extension itself, the store listing handles description)
+- LICENSE (not needed)
+- prompts/ (development artifacts)
+- TODO.md
+- /report/fixtures/ (fake data injection script — local debugging only, must never ship)
+- /report/charts-sandbox.html (sandbox used during 05.4 development)
+- /report/data/world-110m.js (wait — this one is required at runtime for the map rendering in the full report; verify and KEEP if used by report.js or full.js at runtime)
+- Any .md files in prompts or root
+- Any .DS_Store, Thumbs.db, .vscode/, .idea/ (OS/IDE artifacts)
+- node_modules/ (if it exists for any reason)
+
+=== STEP 4 — CREATE THE ZIP ===
+
+Use a Windows-compatible approach since Jon is on Windows. Two options:
+
+Option A — PowerShell one-liner:
+  Compress-Archive -Path @("manifest.json", "background.js", "popup", "report", "lib", "data", "icons") -DestinationPath oys-webstore-v1.0.0.zip -Force
+
+But this requires specifying each top-level path. Safer approach:
+
+Option B — Create a clean staging directory first:
+  
+  # Create staging folder
+  mkdir webstore-build
+  
+  # Copy required folders/files
+  Copy-Item manifest.json webstore-build/
+  Copy-Item background.js webstore-build/  # or whatever the service worker is called
+  Copy-Item -Recurse popup webstore-build/
+  Copy-Item -Recurse report webstore-build/
+  Copy-Item -Recurse lib webstore-build/
+  Copy-Item -Recurse data webstore-build/
+  Copy-Item -Recurse icons webstore-build/
+  
+  # Remove files inside the staging that shouldn't ship
+  Remove-Item webstore-build/report/fixtures -Recurse -Force -ErrorAction SilentlyContinue
+  Remove-Item webstore-build/report/charts-sandbox.html -Force -ErrorAction SilentlyContinue
+  
+  # Zip the staging folder contents (not the folder itself)
+  Compress-Archive -Path webstore-build/* -DestinationPath oys-webstore-v1.0.0.zip -Force
+  
+  # Cleanup staging
+  Remove-Item -Recurse webstore-build
+
+This produces oys-webstore-v1.0.0.zip at the project root.
+
+=== STEP 5 — VERIFY THE ZIP ===
+
+After creation, verify the .zip:
+
+1. Check size: should be reasonable (likely 500 KB - 2 MB). If > 10 MB, something is wrong (images in /images/ might be too big, or something accidentally included).
+
+2. List contents without extracting:
+   Expand-Archive -Path oys-webstore-v1.0.0.zip -DestinationPath zip-verify-temp -Force
+   Get-ChildItem zip-verify-temp -Recurse | Select-Object FullName
+   
+   Review the list:
+   - manifest.json must be at root of zip (not inside a subfolder like "extension/manifest.json")
+   - No .git, no prompts, no fixtures, no sandbox
+   - All runtime files present
+
+3. Remove the verification folder:
+   Remove-Item -Recurse zip-verify-temp
+
+=== STEP 6 — TEST THE ZIP AS AN EXTENSION ===
+
+Before uploading to Chrome Web Store, verify the packaged version actually works.
+
+1. Extract oys-webstore-v1.0.0.zip somewhere temporary, e.g., C:\Temp\oys-test\
+2. Open chrome://extensions
+3. Disable the current "load unpacked" OYS installation (toggle off)
+4. Click "Load unpacked" and point to C:\Temp\oys-test\
+5. Verify the extension loads and works:
+   - Icon appears in toolbar
+   - Click icon, popup opens
+   - Click View Badge or similar, badge renders
+   - Visit an AI site (claude.ai), reload, check counters increment
+6. If OK, delete the test extension and re-enable the dev version
+
+=== DELIVERABLE ===
+
+1. Updated manifest.json with clean version, description, name
+2. oys-webstore-v1.0.0.zip at the project root
+3. Confirmation that the zip loads as a working extension
+
+Report back with:
+- Current manifest.json full content (for Jon to verify)
+- The .zip file size
+- List of top-level entries in the zip
+- Whether load-unpacked test of the zip works
+
+Do NOT commit anything yet. The zip file will NOT be committed to git (add to .gitignore). The manifest.json update will be committed after validation.
+
+Also add to .gitignore:
+  *.zip
+  webstore-build/
+  zip-verify-temp/
+
+So zip artifacts are never pushed to GitHub.

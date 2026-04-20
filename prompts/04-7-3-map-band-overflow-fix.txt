@@ -1,0 +1,81 @@
+Phase 04.7.3 — Fix destinations-list clipped by map-band overflow hidden
+
+=== BUG DIAGNOSIS ===
+
+The .destinations-list element (country breakdown below the map on the badge) is clipped when there are multiple countries. Root cause: .map-band has `overflow: hidden` and its grid row (1fr in .badge's grid-template-rows) doesn't grow to accommodate the destinations-list after the map SVG.
+
+Measured evidence:
+- .map-band: height 199.71px, clipped by overflow:hidden
+- SVG occupies up to 175px (max-height on #worldmap)
+- .destinations-list positioned at y=875 but .map-band ends at y=849
+- List is ~26px below parent boundary, invisible
+
+Effect: with 1 country, list fits barely. With 2-3+ countries, list is completely cut.
+
+=== FIX ===
+
+Three changes in report/styles.css.
+
+Change 1: Reduce SVG map max-height to leave space for the country list:
+  #worldmap {
+    ...
+    max-height: 175px;  →  max-height: 145px;
+  }
+
+Change 2: Remove overflow:hidden from .map-band to let natural flow:
+  .map-band {
+    padding: 0.9rem 1rem 0.8rem;
+    border-bottom: 1px solid var(--ink);
+    min-height: 0;
+    overflow: hidden;  ← REMOVE THIS LINE
+  }
+
+Change 3: In the .badge grid, .map-band's 1fr needs a sensible min-height to prevent other rows from squeezing it when the user has many countries. Add explicit minimum:
+  .map-band {
+    ...
+    min-height: 230px;
+  }
+
+(Removes the min-height: 0 which was working against the grid sizing, replaces with an absolute min that accommodates SVG + list even with 4-5 countries.)
+
+=== TEST PLAN ===
+
+1. Reload extension
+2. With current real data (maybe 1-2 countries), badge should render identically to before
+3. Inject fake data via /report/fixtures/inject-fake-data.js
+4. Reload badge: verify destinations-list showing 3 countries (UNITED STATES · X · FRANCE · X · CHINA · X) fully visible below map
+5. Check the overall badge dimensions: should still be 600×750. If the map-band grew too tall pushing stats-row down below the 750 boundary, adjust other rows slightly.
+
+=== EDGE CASES ===
+
+- Empty state (0 requests): destinations-list has class .empty-note with text "Waiting for your first AI request..." — should still fit
+- 1 country: single line, lots of vertical space — fine, not a regression
+- 4-5 countries: list may wrap to 2 lines — verify no further clipping; if clipped, bump min-height to 250px
+
+=== NO REGRESSIONS ===
+
+Do NOT change:
+- The SVG map's internal structure (projection, arcs, dots)
+- The .destinations-list styling (flex-wrap, gap, fonts)
+- The overall badge dimensions (must stay 600×750 for export/share)
+- Any other section of styles.css
+
+Just the 3 specific CSS tweaks above.
+
+=== VERIFICATION ===
+
+After fix:
+- Badge with fake data shows 3-country breakdown below map: "UNITED STATES · 2,625 · FRANCE · 455 · CHINA · 175"
+- Badge with real data still looks correct
+- Badge export via Download card button produces PNG that matches on-screen rendering
+- Total badge height remains 750px ± 5px
+
+Commit after Jon validates:
+  git add report/styles.css
+  git commit -m "fix: destinations-list no longer clipped when badge shows multiple countries
+
+  - Reduce #worldmap max-height 175px → 145px to free vertical space
+  - Remove overflow:hidden on .map-band that was cutting the list
+  - Add explicit min-height on .map-band to prevent grid squeeze
+  - Bug was invisible with 1 country (list fit in remaining space) but visible with 2+ countries"
+  git push

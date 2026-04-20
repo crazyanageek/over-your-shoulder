@@ -1,0 +1,20 @@
+Decisions:
+
+1. Keep `domain` as the field name. No rename. Adapt the prompt's examples to use `domain` instead of `hostname` throughout.
+
+2. Option (c) — add `city` and `coords` fields to every endpoints.json entry (new ones AND backfill the 27 existing ones). HOST_GEO tables in report.js and full.js remain the single source of truth for map rendering in this phase — update them only for the ~23 new AI services (not for monitoring services). A future phase will consolidate into endpoints.json as single source of truth.
+
+3. Monitoring/analytics/feature-flag services stay OUT of HOST_GEO tables. Their events are captured in counters but they don't appear on maps or in distance/timezone tokens. This preserves the "zero editorial change to PDF/badge" constraint of this phase — the map still shows only AI vendors, which keeps the product message clean.
+
+Additional scope adjustment:
+- Drop use.ai from the list. It was a false positive (sponsored search result mimicking ChatGPT, not a real AI service worth tracking).
+
+Re-derived counts after use.ai removal:
+- AI services added: 22 (not 23)
+- Monitoring/analytics/feature-flags added: 25 (unchanged)
+- Total endpoints.json after expansion: 27 + 22 + 25 = 74 entries
+- Total host_permissions after expansion: 74 (one per domain)
+
+One more refinement per the categoriesScore analysis: since the scoring is keyed on counters.bySourceCategory (initiator-side) not byCategory (destination-side), the monitoring/analytics entries won't leak into scoring via that path. No filter needed in lib/score.js — Option A from my original Step 7 is already satisfied by the existing architecture. Skip that step.
+
+Proceed with Step 2 onwards. Start by reporting the full current state of endpoints.json's 27 entries so I can verify backfill of city/coords is correct. Then wait for my validation before applying changes.

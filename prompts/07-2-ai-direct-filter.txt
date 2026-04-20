@@ -1,0 +1,141 @@
+# Phase 07.2 — ai_direct filter for geographic tokens
+
+## Context
+
+Phase 07.1 expanded endpoints.json from 27 to 100 entries, introducing a new
+`type` field: "ai_direct" (63 entries), "monitoring" (15), "analytics" (16),
+"feature_flags" (6).
+
+The service_worker now stamps each captured event with `endpointType` (value
+from the matched endpoint's `type` field, null if not matched).
+
+Decision: monitoring/analytics/feature_flags events ARE captured and counted
+in total volume, vendor breakdown, and hourly activity — but must NOT appear
+in the geographic breakdown (map + geo tokens on page 3 Block 4), because
+HOST_GEO only contains AI service locations and the map is intentionally
+kept "AI destinations only".
+
+This creates a token inconsistency: countryCount/cityCount currently sum
+across all event types, while the map only plots ai_direct hosts. The stats
+row can say "4 countries contacted" while the map shows 3 dots.
+
+## Scope
+
+This phase fixes that inconsistency and adds a one-line explanation to the
+page 5 methodology table.
+
+NOT in scope:
+- No changes to lib/score.js
+- No changes to the badge (report/report.js)
+- No changes to pages 1, 2, 4, 6, 7, 8 of the full PDF report
+- No changes to data/endpoints.json, manifest.json, service_worker.js
+- No changes to HOST_GEO (still only ai_direct hosts)
+
+## Changes required
+
+### Change 1 — report/full.js: filter geographic tokens on ai_direct
+
+Locate the computation of the following tokens (all used in page 3 Block 4
+"Everywhere your data went"):
+
+- cityCount
+- countryCount
+- timezoneCount
+- farthestCity
+- distanceKm
+- totalDistanceKm
+- foreignCountryCount
+- the two-column list under the map (top 10 cities with counts/%, all
+  countries with counts/%)
+
+Before these are computed, filter the event source to ai_direct only:
+
+```js
+const aiDirectEvents = events.filter(e => e.endpointType === "ai_direct");
+```
+
+Use `aiDirectEvents` (or a filtered counters object derived from it) as the
+input to all 7 tokens above AND the two-column list.
+
+All OTHER tokens on page 3 — Block 1 (vendors), Block 2 (hourly), Block 3
+(score history) — continue to use the full unfiltered event set. Page 2
+tokens (totalRequestsToday, firstTimeToday, lastTimeToday, vendorList,
+minutesActive, secondsPerRequest) also remain unfiltered.
+
+Edge case: if `aiDirectEvents` is empty but `events` is not (user only hit
+monitoring/analytics services, no AI), cityCount/countryCount etc. should
+render as 0 gracefully, and the map should render empty with a fallback
+message if one exists. Do not crash.
+
+Edge case: events with `endpointType === null` (unmatched hosts, legacy
+events from before 07.1) must NOT be counted as ai_direct. The filter
+must be strictly `=== "ai_direct"`.
+
+### Change 2 — report/full.html (page 5, Section 1)
+
+Current table:
+Field                          Used for
+───────────────────────────────────────────────────────────────
+Timestamp                      When the request was sent
+Destination hostname           Which service received the request
+Destination path (truncated)   Category inference (email, code, etc.)
+Tab identifier                 Counting requests per session
+Source site                    The page that initiated the request
+
+Add one row at the bottom:
+Endpoint type                  AI service vs. embedded monitoring
+
+Current text under the table:
+
+> "These five fields are stored locally, in your browser, in the
+> extension's own private storage. They are flushed to disk every 30
+> seconds and rotated out after 30 days. The service worker never
+> connects to any external endpoint — neither to us, nor to any third
+> party."
+
+Replace with:
+
+> "These six fields are stored locally, in your browser, in the
+> extension's own private storage. They are flushed to disk every 30
+> seconds and rotated out after 30 days. The service worker never
+> connects to any external endpoint — neither to us, nor to any third
+> party. AI platforms embed third-party monitoring services — Datadog,
+> Sentry, analytics trackers — that receive data alongside the AI
+> service itself. These are counted in the total request volume on
+> page 2, but the geographic breakdown on page 3 shows only AI
+> destinations to keep the map focused."
+
+Apply the same changes wherever this table/text lives in the HTML
+template (likely report/full.html or a partial).
+
+### Change 3 — phase-05-editorial.md (source of truth)
+
+Apply the exact same two modifications (new table row + replaced
+paragraph) to phase-05-editorial.md, page 5 Section 1, so the
+editorial reference stays in sync with the rendered output.
+
+## Deliverables
+
+- Modified: report/full.js
+- Modified: report/full.html (or equivalent template file)
+- Modified: phase-05-editorial.md
+
+## Do NOT
+
+- Do not commit.
+- Do not regenerate the zip yet.
+- Do not touch score.js, endpoints.json, manifest.json, service_worker.js,
+  report/report.js (badge), HOST_GEO definitions.
+- Do not change page 3 Block 1/2/3 legends or micro-lists.
+- Do not change page 2 text.
+- Do not introduce a new token — reuse the existing token names, just
+  change what they're computed from.
+
+## Report back
+
+- Exact location (file + line range) of the filter added in full.js
+- Confirmation that all 7 geo tokens + two-column list now derive from
+  aiDirectEvents
+- Confirmation that Block 1, Block 2, Block 3, page 2 tokens are unchanged
+- Any edge case or ambiguity encountered
+- Whether the fallback for empty aiDirectEvents exists / was added

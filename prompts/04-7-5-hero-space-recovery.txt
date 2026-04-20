@@ -1,0 +1,112 @@
+Phase 04.7.5 — Recover vertical space for the hero sub-headline
+
+=== MEASURED PROBLEM ===
+
+Badge with 3-country fake data. Measured row heights:
+
+  banner:     0.0 px
+  masthead:  44.8 px
+  hero:     193.2 px ← too small, sub-headline clipped
+  score:    126.4 px
+  map:      215.9 px
+  stats:     73.7 px
+  foot:      96.1 px
+  TOTAL:    750.1 px (badge size intact)
+
+Hero-sub scrollHeight = 65 px (full italic line renders internally). But hero container 193 px is not enough to display title + big number + sub-headline together. User sees sub-headline clipped visually.
+
+Needed: grow hero row to ~235 px minimum.
+
+=== STRATEGY ===
+
+Recover 40+ pixels from two other rows without touching the visual quality of either:
+
+A) Tighten footer (.foot) — currently 96 px, target 72 px. Saves 24 px.
+B) Force .destinations-list to single line — currently wraps to 2 lines, forces map-band to 215 px. Single line drops it to ~195 px. Saves 20 px.
+
+Total recovery: ~44 px → hero goes from 193 to ~237 px. Sub-headline fits cleanly.
+
+=== FIX A — FOOTER COMPACTION ===
+
+In report/styles.css, find the .foot rules. Currently:
+
+  .foot {
+    padding: 0.75rem 1rem;
+    display: flex;
+    flex-direction: column;
+    align-items: stretch;
+    row-gap: 0.5rem;
+    ...
+  }
+
+Change padding and row-gap:
+  padding: 0.5rem 1rem;  (was 0.75rem)
+  row-gap: 0.35rem;      (was 0.5rem)
+
+In the button rules .share-btn.primary, .share-btn.secondary find their padding. Likely something like padding: 0.5rem 1rem. Reduce vertical padding:
+  padding: 0.35rem 1rem (was 0.5rem)
+
+This saves ~8 px on padding, ~3 px on row-gap, and ~6 px per button (2 buttons if they're side by side, or just the one visible). Total saving: ~24 px.
+
+=== FIX B — DESTINATIONS-LIST SINGLE LINE ===
+
+In report/styles.css, find .destinations-list. Currently uses flex-wrap: wrap which allows 2-line layout for 3+ countries.
+
+Change:
+  flex-wrap: wrap; → flex-wrap: nowrap;
+  overflow-x: hidden;
+  
+Add to .destinations-list:
+  width: 100%;
+  
+Add to .dest-item:
+  flex-shrink: 0;  (prevent items from shrinking)
+  
+For safety if a user has 7+ countries (rare but possible), we need a graceful degradation. Add:
+  .destinations-list {
+    mask-image: linear-gradient(to right, black 85%, transparent 100%);
+  }
+
+This fades the right edge if content overflows, indicating there's more off-screen. With 3 countries like "UNITED STATES · 2,899" + "FRANCE · 453" + "CHINA · 162", total text width is ~420-450 px at 10.5px font size. Container is 568 px. So no overflow in current fake data, mask won't visibly apply.
+
+=== VERIFICATION ===
+
+After fix, reload and measure again:
+
+  [...document.querySelectorAll('.badge > *')].forEach(el => {
+    console.log(el.className, '→', el.getBoundingClientRect().height.toFixed(1));
+  });
+
+Expected:
+  hero: ~235-245 px (was 193)
+  map-band: ~195 px (was 216)
+  foot: ~72 px (was 96)
+  TOTAL: still 750 px
+
+Visual check:
+  1. Hero: italic sub-headline "In X minutes..." fully visible, not clipped
+  2. Footer: download button + full report button + social icons, still clearly readable, just tighter
+  3. Map-band: destinations-list on single line, all 3 countries visible
+
+Test in all 3 states:
+  - Real data (1 country): list renders single line cleanly
+  - Fake inject (3 countries): list renders single line, hero fully visible
+  - Empty state: hero renders empty message, foot renders tight
+
+Total badge must stay 750 px.
+
+=== COMMIT STRATEGY ===
+
+After Jon visual validation of all 3 states, squash with 04.7.3 + 04.7.4 into one commit:
+
+  git add report/styles.css
+  git commit -m "fix: badge layout rebalance — no clipping in any data state
+
+  - .map-band: removed overflow:hidden, reduced #worldmap max-height 175 → 135
+  - .destinations-list: flex-wrap nowrap with fade-mask for 7+ country graceful degradation
+  - .foot: tighter padding + row-gap to recover vertical space for hero row
+  - .share-btn: reduced vertical padding
+  
+  Validated in 3 states: 1-country real data, 3-country fake inject, empty state.
+  Badge total stays 600×750. All content visible, no clipping."
+  git push

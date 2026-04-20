@@ -16,3 +16,8 @@ installFromGitHub.txt
 
 # Local debugging tool, not for distribution
 report/fixtures/
+
+# Web Store packaging artifacts
+*.zip
+webstore-build/
+zip-verify-temp/
